@@ -1,2 +1,3 @@
 # USquat
-USquat is a mobile application using computer vision and machine learning to assist user in detection and correction of squatting form.
+USquat is a mobile application using computer vision and machine learning to assist user in detection and correction of squatting form. 
+See wiki for more details
