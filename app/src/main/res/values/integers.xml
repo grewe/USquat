@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <integer name="deltaCovidRecordStoreTimeMS">6000</integer>
+
+    <integer name="deltaMaskRecordStoreTimeMS">6000</integer>
+
+    <integer name="deltaFeverRecordStoreTimeMS">6000</integer>
+
+    <integer name="deltaCrowdRecordStoreTimeMS">6000</integer>
+
+    <integer name="deltaSocDistRecordStoreTimeMS">6000</integer>
+
+    <integer name="deltaCovidRecordStoreLocationM">20</integer>
+
+    <integer name="deltaMaskRecordStoreLocationM">20</integer>
+
+    <integer name="deltaFeverRecordStoreLocationM">20</integer>
+
+    <integer name="deltaCrowdRecordStoreLocationM">20</integer>
+
+    <integer name="deltaSocDistRecordStoreLocationM">20</integer>
+
+    <!-- IR Record Risk Values -->
+    <integer name="riskThresholdHigh_IR">70</integer>
+    <integer name="riskThresholdCaution_IR">40</integer>
+
+    <!-- Crowd Record Risk Values -->
+    <integer name="riskThresholdHigh_Crowd">70</integer>
+    <integer name="riskThresholdCaution_Crowd">40</integer>
+
+    <!-- SocDist Record Risk Values -->
+    <integer name="riskThresholdHigh_SocDist">70</integer>
+    <integer name="riskThresholdCaution_SocDist">40</integer>
+
+    <!-- LSBDM SocDist Record Risk Values -->
+    <integer name="riskThresholdHigh_SocDist_LSBDM">70</integer>
+    <integer name="riskThresholdCaution_SocDist_LSBDM">40</integer>
+
+    <!-- Mask Record Risk Values -->
+    <integer name="riskThresholdHigh_Mask">70</integer>
+    <integer name="riskThresholdCaution_Mask">40</integer>
+
+
+    <!-- MouthNose Record Risk Values -->
+    <integer name="riskThresholdHigh_Mouth_Nose">70</integer>
+    <integer name="riskThresholdCaution_Mouth_Nose">40</integer>
+
+    <!-- Default (CovidRecord) Risk Values -->
+    <integer name="riskThresholdHigh_Covid">70</integer>
+    <integer name="riskThresholdCaution_Covid">40</integer>
+
+    <!-- IR lower and upper threshold for temp to store record (Celsius) -->
+    <integer name="minTempThresholdForIRStorage">32</integer>
+    <integer name="maxTempThresholdForIRStorage">44</integer>
+
+
+
+</resources>
