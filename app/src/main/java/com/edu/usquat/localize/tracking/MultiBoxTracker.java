@@ -257,10 +257,10 @@ public class MultiBoxTracker {
       //Added by shivali
       //Checking the max temp greater thn 0 to avoid null pointer error.
       //Adding temp and highest temp location
-      if(potential.second.getMaxTemp()>0){
-        trackedRecognition.maxTemp = potential.second.getMaxTemp();
-        trackedRecognition.maxTempLocation = new Point(potential.second.getMaxTempLocation());
-      }
+//      if(potential.second.getMaxTemp()>0){
+//        trackedRecognition.maxTemp = potential.second.getMaxTemp();
+//        trackedRecognition.maxTempLocation = new Point(potential.second.getMaxTempLocation());
+//      }
 
       trackedObjects.add(trackedRecognition);
 
