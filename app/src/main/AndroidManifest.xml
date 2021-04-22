@@ -35,6 +35,16 @@
             </intent-filter>
         </activity>
 
+        <activity android:name="com.edu.usquat.Classifier.ClassifierActivity"
+            android:hardwareAccelerated="true"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="com.edu.usquat.Classifier.ClassifierActivity" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
     </application>
 
 </manifest>

@@ -2,6 +2,7 @@ package com.edu.usquat.Classifier;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.hardware.camera2.CameraCaptureSession;
@@ -44,8 +45,6 @@ public class CameraActivity extends Activity implements OnDataPass {
     protected void onCreate(final Bundle savedInstanceState) {
         Log.d(TAG,"on create" + this);
         super.onCreate(savedInstanceState);
-
-
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_camera);
 
@@ -74,10 +73,15 @@ public class CameraActivity extends Activity implements OnDataPass {
         for(int i = 1000000;i<seconds;i+= step){
             Bitmap bitmap = fmpeg.getFrameAtTime(i, MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
             Bitmap resizedBitmap = getResizeBitmap(bitmap,imgSize);
+            resizedBitmap = resizedBitmap.copy(Bitmap.Config.ARGB_8888,true);
             frames.add(resizedBitmap);
         }
 
         Log.d(TAG,String.valueOf(frames.size()));
+        Intent intent = new Intent(CameraActivity.this,ClassifierActivity.class);
+        BitmapDTO.getInstance().setBitmaps(frames);
+        startActivity(intent);
+        //processing();
     }
 
 
@@ -94,4 +98,6 @@ public class CameraActivity extends Activity implements OnDataPass {
         height = imgSize;
         return Bitmap.createScaledBitmap(image,width,height,true);
     }
+
+
 }

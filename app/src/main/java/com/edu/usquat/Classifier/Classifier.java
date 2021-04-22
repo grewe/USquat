@@ -1,225 +1,367 @@
-//package com.edu.usquat.Classifier;
-//
-//import android.app.Activity;
-//import android.content.res.AssetFileDescriptor;
-//import android.content.res.AssetManager;
-//import android.os.FileUtils;
-//
-//import java.io.File;
-//import java.io.FileInputStream;
-//import java.io.IOException;
-//import java.nio.MappedByteBuffer;
-//import java.nio.channels.FileChannel;
-//import java.util.ArrayList;
-//import java.util.List;
-//import java.util.Map;
-//import java.util.logging.Logger;
-//
-//import org.tensorflow.lite.DataType;
-//import org.tensorflow.lite.Interpreter;
-//import org.tensorflow.lite.gpu.CompatibilityList;
-//import org.tensorflow.lite.gpu.GpuDelegate;
-//import org.tensorflow.lite.support.common.FileUtil;
-//
-//
-///*
-//* This is the abstract class for handling inference and prediction
-//* */
-//public abstract class Classifier {
-//    // TODO: implement Logger helper function
-//    private static final Logger LOGGER = new Logger();
-//
-//    /* Enum type of devices */
-//    public enum Device{
-//        CPU,
-//        GPU
-//    }
-//
-//
-//    /* Number of display result */
-//    // TODO: have to recheck
-//    private static final int MAX_RESULT = 3;
-//
-//    /* Loaded tflite Models */
-//    private MappedByteBuffer feature_extractor_model;
-//    private MappedByteBuffer lstm_model;
-//
-//    /* Images coordinator along x and y axis */
-//    private final int image_size_x;
-//    private final int getImage_size_y;
-//
-//    /* Input Size of images for feature_extractor_model (EfficientNet-B4) */
-//    final int input_size = 380;
-//
-//    private final int num_frames;
-//    private final int feature_vector_length;
-//
-//
-//    /* Initialize an instance to run inference with TensorFlow Lite */
-//    protected Interpreter feature_extractor_tflite;
-//    protected Interpreter lstm_tflite;
-//
-//    /* Optional GPU Delegate for acceleration */
-//    // Initialize interpreter with GPU delegate
-//    // TODO: need to re-implement this
-//    Interpreter.Options options = new Interpreter.Options();
-//    GpuDelegate gpuDelegate;
-//
-//
-//    final AssetManager assetManager = null;
-//    final float confidence = 0.5f;
-//    final int classes;
-//
-//    /* Labels corresponding to the probabilities output of LSTM model*/
-//    private List<String> labels;
-//
-//    /* Initialize input of LSTM model input ( must be 3D: samples, time_steps, features)*/
-//    public float[][][] lstm_input = null;
-//
-//    private static final float IMAGE_MEAN = 128.0f;
-//    private static final float IMAGE_STD = 128.0f;
-//
-//
-//    /* Memory Mapp the model file in Assets */
-//    private static MappedByteBuffer loadModelFile(AssetManager assets, String modelFileName) throws IOException{
-//        AssetFileDescriptor fileDescriptor = assets.openFd(modelFileName);
-//        FileInputStream inputStream = new FileInputStream(fileDescriptor.getFileDescriptor());
-//        FileChannel fileChannel = inputStream.getChannel();
-//        long startOffset = fileDescriptor.getStartOffset();
-//        long declareLength = fileDescriptor.getDeclaredLength();
-//        return fileChannel.map(FileChannel.MapMode.READ_ONLY,startOffset,declareLength);
-//    }
-//
-//    /*Create a Classifer with specific configuration */
-//
-//    public static Classifier create(Activity activity,Device device,int numThreads,AssetManager assetManager) throws IOException{
-//        return new ClassifierFloat(activity,device,numThreads,assetManager);
-//    }
-//
-//    /*Create an immutable results obtained from Classifier */
-//    public static class Recognition{
-//        private final String id;
-//        private final String title;
-//        private final float confidence;
-//
-//        public Recognition(final String id, final String title, final Float confidence){
-//            this.id = id;
-//            this.title = title;
-//            this.confidence = confidence;
+package com.edu.usquat.Classifier;
+import android.app.Activity;
+import android.content.res.AssetFileDescriptor;
+import android.content.res.AssetManager;
+import android.graphics.Bitmap;
+import android.graphics.RectF;
+import android.os.FileUtils;
+import android.util.Log;
+
+import org.tensorflow.lite.DataType;
+import org.tensorflow.lite.Interpreter;
+import org.tensorflow.lite.gpu.GpuDelegate;
+import org.tensorflow.lite.support.common.FileUtil;
+import org.tensorflow.lite.support.common.TensorOperator;
+import org.tensorflow.lite.support.image.ImageProcessor;
+import org.tensorflow.lite.support.image.TensorImage;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.PriorityQueue;
+
+/** A classifier specialized to label images using TensorFlow Lite.
+ *
+ *    NOTE 2: Classifier contains most of the complex logic for processing the camera input and running inference.
+ *
+ *       A subclasses of the file exist, in ClassifierFloatMobileNet.java (in other Tensorflowlite examples there is ClassifierQuantizedMobileNet.java), to demonstrate the use of
+ *       floating point (and quantized) models.
+ *
+ *       The Classifier class implements a static method, create, which is used to instantiate the appropriate subclass based on the supplied model type (quantized vs floating point).
+ *
+ *
+ */
+
+public abstract class Classifier {
+
+    private static final String TAG = "Classififer" ;
+
+    /**
+     * The runtime device type used for executing classification.
+     */
+    public enum Device {
+        CPU,
+        GPU
+    }
+
+    /** Number of results to show in the UI. */
+    private static final int MAX_RESULTS = 2;
+
+    /** The loaded TensorFlow Lite model. */
+    private MappedByteBuffer featureExtractorModel;
+    private MappedByteBuffer lstmModel;
+    private final int featureLength;
+    private GpuDelegate gpuDelegate = null;
+    final int inputSize = 380;
+
+    private final int frames;
+    /** Input image TensorBuffer. */
+    private TensorImage inputImageBuffer;
+
+    /** An instance of the driver class to run model inference with Tensorflow Lite. */
+    protected Interpreter extractorTflite;
+    protected Interpreter lstmTflite;
+    final AssetManager assetManager = null;
+    final float confidenceInterval = 0.5f;
+
+    /** Options for configuring the Interpreter. */
+    private final Interpreter.Options tfliteOptions = new Interpreter.Options();
+
+    /** Labels corresponding to the output of the vision model. */
+    private List<String> labels;
+
+    public float[][][] lstmInput = null;
+
+
+    public int frame = 0; // FRAME NUMBER
+    public int frame2 = 0;
+
+
+    /** Load Tflite Model */
+    private static MappedByteBuffer loadModelFile(AssetManager assets, String modelFilename)
+            throws IOException {
+        AssetFileDescriptor fileDescriptor = assets.openFd(modelFilename);
+        FileInputStream inputStream = new FileInputStream(fileDescriptor.getFileDescriptor());
+        FileChannel fileChannel = inputStream.getChannel();
+        long startOffset = fileDescriptor.getStartOffset();
+        long declaredLength = fileDescriptor.getDeclaredLength();
+        return fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength);
+    }
+
+
+    /**
+     * Creates a classifier with the provided configuration.
+     *
+     * @param activity The current Activity.
+     * @param device The device to use for classification.
+     * @param numThreads The number of threads to use for classification.
+     * @return A classifier with the desired configuration.
+     */
+    public static Classifier create(Activity activity, Device device, int numThreads, AssetManager assetManager)
+            throws IOException {
+
+       return new ClassifierFloat(activity, device, numThreads, assetManager);
+
+    }
+
+    /** An immutable result returned by a Classifier describing what was recognized. */
+    public static class Recognition {
+        /**
+         * A unique identifier for what has been recognized. Specific to the class, not the instance of
+         * the object.
+         */
+        private final String id;
+
+        /** Display name for the recognition. */
+        private final String title;
+
+        /**
+         * A sortable score for how good the recognition is relative to others. Higher should be better.
+         */
+        private final Float confidence;
+
+
+        public Recognition(
+                final String id, final String title, final Float confidence) {
+            this.id = id;
+            this.title = title;
+            this.confidence = confidence;
+
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public String getTitle() {
+            return title;
+        }
+
+        public Float getConfidence() {
+            return confidence;
+        }
+
+
+        @Override
+        public String toString() {
+            String resultString = "";
+            if (id != null) {
+                resultString += "[" + id + "] ";
+            }
+
+            if (title != null) {
+                resultString += title + " ";
+            }
+
+            if (confidence != null) {
+                resultString += String.format("(%.1f%%) ", confidence * 100.0f);
+            }
+
+
+            return resultString.trim();
+        }
+    }
+    /** Initializes a {@code Classifier}.
+     *
+     *
+     * To perform inference, we need to load a model file and instantiate an Interpreter.
+     * This happens in the constructor of the Classifier class, along with loading the list of class labels.
+     * Information about the device type and number of threads is used to configure the Interpreter via the
+     * Interpreter.Options instance passed into its constructor. Note how that in the case of a GPU being
+     * available, a Delegate is created using GpuDelegateHelper.
+     *
+     * */
+    protected Classifier(Activity activity, Device device, int numThreads,AssetManager assetManager) throws IOException {
+        featureExtractorModel = FileUtil.loadMappedFile(activity, getModelPath());
+        switch (device) {
+            case GPU:
+                //create a GPU delegate instance and add it to the interpreter options
+                gpuDelegate = new GpuDelegate();
+                tfliteOptions.addDelegate(gpuDelegate);
+
+                break;
+            case CPU:
+                break;
+        }
+        tfliteOptions.setNumThreads(numThreads);
+
+        // Create a TFLite interpreter instance
+      extractorTflite = new Interpreter(featureExtractorModel, tfliteOptions);
+
+        int imageTensorIndex = 0;
+        int[] imageShape = extractorTflite.getInputTensor(imageTensorIndex).shape(); // {1, height, width, 3} get input tensor
+
+        DataType imageDataType = extractorTflite.getInputTensor(imageTensorIndex).dataType();
+
+
+        int probabilityTensorIndex = 0;
+        int[] probabilityShape =
+                extractorTflite.getOutputTensor(probabilityTensorIndex).shape(); // {1, 1792} the shape of output
+        DataType probabilityDataType = extractorTflite.getOutputTensor(probabilityTensorIndex).dataType(); // datatype
+
+        // Creates the input tensor.
+        inputImageBuffer = new TensorImage(imageDataType);
+
+// **********************************CREATE LSTM MODEL HERE ***************************************
+
+        lstmModel = FileUtil.loadMappedFile(activity, "lstm_classifier.tflite");
+
+
+        // Create a TFLite interpreter instance
+        lstmTflite = new Interpreter(lstmModel, tfliteOptions);
+
+        // Loads labels out from the label file.
+        labels = FileUtil.loadLabels(activity, getLabelPath()); // Igonore Possibly?????
+        //classes = labels.size();
+
+        int imageTensorIndex2 = 0;
+        int[] imageShape2 = lstmTflite.getInputTensor(imageTensorIndex2).shape(); // must look smt like this {1,40,1792} get input tensor
+
+        frames = imageShape2[1]; // number of frames
+        featureLength = imageShape2[2]; //
+        lstmInput = new float[frames][1][featureLength];
+
+        // TODO
+    }
+        private List<Recognition> test;
+        public List<Recognition> getFrames(final List<Bitmap> processing_frames ){
+        Log.d(TAG,String.valueOf(processing_frames.size()));
+            return recognizeImages(processing_frames);
+
+        }
+
+        // TODO: sliding window for
+        /** Runs inference and returns the classification results.
+         * */
+        public List<Recognition> recognizeImages(final List<Bitmap> processing_frames) {
+//            for (int i = 0 ; i < processing_frames.size(); i++){
+//                for (int j = i + 1 ; j < 41; j++){
+//                    if (j < 40){
+//                        inputImageBuffer = loadImage(processing_frames.get(j));
+//                        extractorTflite.run(inputImageBuffer.getBuffer(),lstmInput[j]);
+//                    }
+//                    if (j == 40){
+//                        Log.d(TAG,"Reach frame 40");
+//                        //return recognizeImageLSTM();
+//                    }
+//                }
+
+
+        for(int i = 0; i < 40; i++){
+            if(i == processing_frames.size()){
+                return recognizeImageLSTM();
+            }
+             inputImageBuffer = loadImage(processing_frames.get(i));
+             extractorTflite.run(inputImageBuffer.getBuffer(),lstmInput[i]);
+
+         }
+           return recognizeImageLSTM();
+
+        }
+
+//         return null;
 //        }
-//
-//        /*Get methods for class Recognition*/
-//        public String getID(){
-//            return id;
-//        }
-//
-//        public String getTitle(){
-//            return title;
-//        }
-//
-//        public float getConfidence(){
-//            return confidence;
-//        }
-//
-//        @Override
-//        public String toString(){
-//            String resultString = "";
-//
-//            if (id!=null){
-//                resultString += "[" + id + "]";
-//            }
-//            if (title!=null){
-//                resultString += title + " ";
-//            }
-//            if (confidence!=0){
-//                resultString += String.format("(%.1f%%) ", confidence * 100.0f);
-//            }
-//            return resultString.trim();
-//        }
-//
-//    }
-//
-//    /* Feature Extractor Model is loading here */
-//
-//    protected Classifier (Activity activity,Device device,int numThreads,AssetManager assetManager) throws IOException{
-//        //TODO: need to change feature_extractor.tflite path
-//        feature_extractor_model = FileUtil.loadMappedFile(activity,'feature_extractor.tflite');
-//        switch (device){
-//            case GPU:
-//                gpuDelegate = new GpuDelegate();
-//                options.addDelegate(gpuDelegate);
-//                break;
-//            case CPU:
-//                break;
-//        }
-//        options.setNumThreads(numThreads);
-//
-//
-//        // Create Intepreter Instance
-//        feature_extractor_tflite = new Interpreter(feature_extractor_model,options);
-//        //TODO
-//        /* Extract features given the video here*/
-//
-//        int imageTensorIndex = 0;
-//        // TODO: need to re-check shape & type here
-//        int[] imageShape = feature_extractor_tflite.getInputTensor(imageTensorIndex).shape();
-//        DataType imageDataType = feature_extractor_tflite.getInputTensor(imageTensorIndex).dataType();
-//
-//
-//        /*Output of feature_extractor_tflite (feature_Vector)*/
-//        int feature_vector_index = 0;
-//        // TODO: check -- have to match with {1,1792}
-//        int[] feature_vector_shape = feature_extractor_tflite.getOutputTensor(feature_vector_index).shape();
-//        DataType feature_vector_type = feature_extractor_tflite.getOutputTensor(feature_vector_index).dataType();
-//
-//
-//        /*LSTM models is loaded here*/
-//        // TODO: Change filepath of LSTM.tflite
-//        lstm_model = FileUtil.loadMappedFile(activity,"lstm.tflite");
-//
-//        // Create Intepreter Instance
-//        lstm_tflite = new Interpreter(lstm_model,options);
-//
-//        // Load class labels from file
-//        // TODO: need to add class_labels path
-//        labels = FileUtil.loadLabels(activity,"class_labels.txt");
-//        classes = labels.size();
-//
-//        int imageTensorIndex2 = 0;
-//        // TODO: need to check shape {40,16,width,3}
-//        int[] imageShape2 = lstm_tflite.getInputTensor(imageTensorIndex2).shape();
-//
-//        // TODO: need to check
-//        num_frames = imageShape2[1];
-//        feature_vector_length = imageShape[2];
-//
-//        // Define LSTM input here [frames][16][feature_vector_length]
-//        lstm_input = new float[numThreads][16][feature_vector_length];
-//    }
-//
-//    //TODO: here LSTM has to take a processed_image_buffer getting from the recorded video
-//
-//    /*Here we start calling the final classification result*/
-//    public List<Recognition> lstmClassifer(){
-//
-//        // Passing image_buffer to lstm tflite.run(input,output)
-//        lstm_tflite.run(images_buffer,prob_list);
-//        // Map labels with prob_list
-//        Map<String,Float> probs = makeProb(prob_list[0]);
-//        return getTopKProbability(probs);
-//    }
-//
-//    public Map<String,Float> makeProb(float[] list){
-//        return result;
-//    }
-//
-//    static List<Recognition> getTopKProbability(Map<String,Float> prob_list){
-//        // find the top max probabilities using max heap
-//        final ArrayList<Recognition> recognitionArrayList = new ArrayList<>();
-//        // TODO: implement max heap here
-//        return recognitionArrayList;
-//    }
-//
-//
-//}
-//
+    /** Closes the interpreter and model to release resources. */
+    public void close() {
+        if (extractorTflite != null) {
+            // Close the interpreter
+            extractorTflite.close();
+            extractorTflite = null;
+
+
+        }
+        if (lstmTflite != null) {
+            lstmTflite.close();
+            lstmTflite = null;
+
+        }
+        // Close the GPU delegate
+        if (gpuDelegate != null) {
+            gpuDelegate.close();
+            gpuDelegate = null;
+        }
+
+
+        featureExtractorModel = null;
+        lstmModel = null;
+    }
+        private TensorImage loadImage(final Bitmap bitmap){
+            inputImageBuffer.load(bitmap);
+            ImageProcessor imageProcessor = new ImageProcessor.Builder()
+                    .add(getPreprocessNormalizeOp())
+                    .build();
+            return imageProcessor.process(inputImageBuffer);
+        }
+
+        public List<Recognition> recognizeImageLSTM() {
+            float[][] test = new float[1][5];
+            // Run TFLite inference passing in the processed image.
+            lstmTflite.run(lstmInput, test);
+
+            Map<String, Float> labeledProbability = makeProb(test[0]);
+
+            return getTopKProbability(labeledProbability);
+
+        }
+
+
+        public Map<String, Float> makeProb(float[] results) {
+            Map<String,Float> temp = new HashMap<String, Float>();
+            // get from labels.txt
+            for (int i = 0; i < 5; i++) {
+                temp.put(labels.get(i), results[i]);
+            }
+            return temp;
+        }
+
+    /** Gets the top-k results. */
+    static List<Recognition> getTopKProbability(Map<String, Float> labelProb) {
+        // Find the best classifications.
+        PriorityQueue<Recognition> pq =
+                new PriorityQueue<>(
+                        MAX_RESULTS,
+                        new Comparator<Recognition>() {
+                            @Override
+                            public int compare(Recognition lhs, Recognition rhs) {
+                                // Intentionally reversed to put high confidence at the head of the queue.
+                                return Float.compare(rhs.getConfidence(), lhs.getConfidence());
+                            }
+                        });
+
+        for (Map.Entry<String, Float> entry : labelProb.entrySet()) {
+            pq.add(new Recognition("" + entry.getKey(), entry.getKey(), entry.getValue()));
+        }
+
+        final ArrayList<Recognition> recognitions = new ArrayList<>();
+        int recognitionsSize = Math.min(pq.size(), MAX_RESULTS);
+        for (int i = 0; i <recognitionsSize; ++i) {
+            recognitions.add(pq.poll());
+        }
+        return recognitions;
+    }
+
+    /** Gets the name of the model file stored in Assets. */
+    protected abstract String getModelPath();
+
+    /** Gets the name of the label file stored in Assets. */
+    protected abstract String getLabelPath();
+
+    /** Gets the TensorOperator to nomalize the input image in preprocessing. */
+    protected abstract TensorOperator getPreprocessNormalizeOp();
+
+    /**
+     * Gets the TensorOperator to dequantize the output probability in post processing.
+     *
+     * <p>For quantized model, we need de-quantize the prediction with NormalizeOp (as they are all
+     * essentially linear transformation). For float model, de-quantize is not required. But to
+     * uniform the API, de-quantize is added to float model too. Mean and std are set to 0.0f and
+     * 1.0f, respectively.
+     */
+    protected abstract TensorOperator getPostprocessNormalizeOp();
+    }

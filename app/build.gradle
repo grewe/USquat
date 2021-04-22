@@ -9,7 +9,7 @@ android {
     defaultConfig {
         applicationId "com.edu.usquat"
         minSdkVersion 26
-        targetSdkVersion 30
+        targetSdkVersion 29
         versionCode 1
         versionName "1.0"
 
@@ -21,6 +21,9 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
+    }
+    aaptOptions {
+        noCompress "tflite"
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
