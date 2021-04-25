@@ -1,4 +1,5 @@
 package com.edu.usquat.Classifier;
+import android.animation.TimeInterpolator;
 import android.app.Activity;
 import android.content.res.AssetFileDescriptor;
 import android.content.res.AssetManager;
@@ -6,6 +7,7 @@ import android.graphics.Bitmap;
 import android.graphics.RectF;
 import android.os.FileUtils;
 import android.util.Log;
+import android.util.TimingLogger;
 
 import org.tensorflow.lite.DataType;
 import org.tensorflow.lite.Interpreter;
@@ -251,16 +253,17 @@ public abstract class Classifier {
 //                        //return recognizeImageLSTM();
 //                    }
 //                }
-
-
+            Log.d(TAG,String.valueOf(String.format("%1$TH:%1$TM:%1$TS",System.currentTimeMillis())));
         for(int i = 0; i < 40; i++){
             if(i == processing_frames.size()){
+                Log.d(TAG,String.valueOf(String.format("%1$TH:%1$TM:%1$TS",System.currentTimeMillis())));
                 return recognizeImageLSTM();
             }
              inputImageBuffer = loadImage(processing_frames.get(i));
              extractorTflite.run(inputImageBuffer.getBuffer(),lstmInput[i]);
 
          }
+            Log.d(TAG,String.valueOf(String.format("%1$TH:%1$TM:%1$TS",System.currentTimeMillis())));
            return recognizeImageLSTM();
 
         }
