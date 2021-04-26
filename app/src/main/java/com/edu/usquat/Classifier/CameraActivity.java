@@ -60,29 +60,54 @@ public class CameraActivity extends Activity implements OnDataPass {
     }
     // This method is used to get the stored video_path from CameraFragment.
 
+    //KELLY fix so that for 1st version of app -- 2 options: 1) take 40 frames across video 2) sliding window of 40 frames
+    // Because of taking approx 1 min to process each set of 40 frames through LSTM, version 1.0 of USquat will only do
+    // option 1
     /**
-     * USquat method to reciebe video data and proceded it with UFall model
+     * USquat method to "recieve" (stored on device) video data and it extracts 40 frames
+     * and processes it using the ClassifierActivity that it launches
+     * -- 2 options: 1) OPTION GLOBAL_SAMPLE take 40 frames across video
+     *               2) OPTION SLIDING_WINDOW sliding window of 40 frames
+     *     // Because of taking approx 1 min to process each set of 40 frames through LSTM, version 1.0 of USquat will only do
+     *     // option 1
      * @param data
      */
     @Override
-    public void onDataPass(String data) {
+    public void onDataPass(String data, String option) {
         Log.d(TAG,data);
 
         MediaMetadataRetriever fmpeg = new MediaMetadataRetriever();
         fmpeg.setDataSource(data);
         ArrayList<Bitmap> frames = new ArrayList<Bitmap>();
         MediaPlayer mp = MediaPlayer.create(getBaseContext(), Uri.parse(data));
-        int seconds = mp.getDuration() * 1000;
+        int seconds = mp.getDuration() * 1000;  //milliseconds time of video
         //assume average framerate of 30 -- future work to query device,but, changes constantly
         int frameRate = 30;
-        //using MediaMetadataRetrivier -which works in microsecond units
-        long step = Math.round(1000*1000/frameRate);  //mkae steps in microsecond
-        for(int i = 1000000;i<seconds;i+= step){   // ignoring the first second
-            // the MediaMetadataRetriever.getFrameAtTime() takes in microseconds 10^-6
-            Bitmap bitmap = fmpeg.getFrameAtTime(i, MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
-            Bitmap resizedBitmap = getResizeBitmap(bitmap,imgSize);
-            resizedBitmap = resizedBitmap.copy(Bitmap.Config.ARGB_8888,true);
-            frames.add(resizedBitmap);
+
+        if(option =="GLOBAL_SAMPLE"){
+            //KELLY NEED TO FIX THIS
+            //using MediaMetadataRetrivier -which works in microsecond units
+            long step = Math.round(1000*1000/frameRate);  //mkae steps in microsecond (#microseconds per frame)
+            for(int i = 1000000;i<seconds;i+= step){   // ignoring the first second, grabbing every frame
+                // the MediaMetadataRetriever.getFrameAtTime() takes in microseconds 10^-6
+                Bitmap bitmap = fmpeg.getFrameAtTime(i, MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
+                Bitmap resizedBitmap = getResizeBitmap(bitmap,imgSize);
+                resizedBitmap = resizedBitmap.copy(Bitmap.Config.ARGB_8888,true);
+                frames.add(resizedBitmap);
+            }
+
+        }
+        else {  //SLIDING_WINDOW  -- KELLY FIX or for now just leaving it alone
+            //using MediaMetadataRetrivier -which works in microsecond units
+            long step = Math.round(1000*1000/frameRate);  //mkae steps in microsecond (#microseconds per frame)
+            for(int i = 1000000;i<seconds;i+= step){   // ignoring the first second, grabbing every frame
+                // the MediaMetadataRetriever.getFrameAtTime() takes in microseconds 10^-6
+                Bitmap bitmap = fmpeg.getFrameAtTime(i, MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
+                Bitmap resizedBitmap = getResizeBitmap(bitmap,imgSize);
+                resizedBitmap = resizedBitmap.copy(Bitmap.Config.ARGB_8888,true);
+                frames.add(resizedBitmap);
+            }
+
         }
 
         Log.d(TAG,String.valueOf(frames.size()));

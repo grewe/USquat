@@ -218,11 +218,21 @@ public class Camera2VideoFragment extends Fragment
     @Override
     public void onAttach(Context context){
         super.onAttach(context);
-        dataPasser = (OnDataPass) context;
+        dataPasser = (OnDataPass) context;   //the wrapping CameraActivity that contains this fragment is the context
+                                             // note OnDataPass is an interface that CameraActivity implements.
     }
+
+    /**
+     * USquat:  the processing to extract X (i.e. 40) frames is performed by dataPasser and instance
+     * of the inner  class OnData that does the extraction and then "sends" this data back to
+     * the CLassifierActivity for USquat RNN process.
+     * @param data
+     */
     public void passData(String data){
-        dataPasser.onDataPass(data);
+        dataPasser.onDataPass(data, "GLOBAL_SAMPLE");
     }
+
+
     /**
      * In this sample, we choose a video size with 3x4 aspect ratio. Also, we don't use sizes
      * larger than 1080p, since MediaRecorder cannot handle such a high-resolution video.
@@ -304,6 +314,11 @@ public class Camera2VideoFragment extends Fragment
         super.onPause();
     }
 
+    /**
+     * Button (either record or stop text showing) responding appropriately to either start Recording
+     * or stop recording and call respsective service methods in this class
+     * @param view
+     */
     @Override
     public void onClick(View view) {
         switch (view.getId()) {
@@ -676,6 +691,13 @@ public class Camera2VideoFragment extends Fragment
         }
     }
 
+    /**
+     * USQUAT: stopRecordingVideo() method
+     * This will stop recording and call passData() that will call passData given the path
+     * to where the recording is stored on the device to extract X(i.e.40) frames to send
+     * to the USquat RNN for processing
+     *
+     */
     private void stopRecordingVideo() {
         // UI
         mIsRecordingVideo = false;

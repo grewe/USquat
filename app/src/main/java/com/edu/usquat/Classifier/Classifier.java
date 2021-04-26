@@ -102,7 +102,8 @@ public abstract class Classifier {
      *
      * @param activity The current Activity.
      * @param device The device to use for classification.
-     * @param numThreads The number of threads to use for classification.
+     * @param numThreads The number of threads
+     *
      * @return A classifier with the desired configuration.
      */
     public static Classifier create(Activity activity, Device device, int numThreads, AssetManager assetManager)
