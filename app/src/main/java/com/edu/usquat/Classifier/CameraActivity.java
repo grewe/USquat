@@ -59,6 +59,11 @@ public class CameraActivity extends Activity implements OnDataPass {
 
     }
     // This method is used to get the stored video_path from CameraFragment.
+
+    /**
+     * USquat method to reciebe video data and proceded it with UFall model
+     * @param data
+     */
     @Override
     public void onDataPass(String data) {
         Log.d(TAG,data);
@@ -68,9 +73,12 @@ public class CameraActivity extends Activity implements OnDataPass {
         ArrayList<Bitmap> frames = new ArrayList<Bitmap>();
         MediaPlayer mp = MediaPlayer.create(getBaseContext(), Uri.parse(data));
         int seconds = mp.getDuration() * 1000;
+        //assume average framerate of 30 -- future work to query device,but, changes constantly
         int frameRate = 30;
-        long step = Math.round(1000*1000/frameRate);
-        for(int i = 1000000;i<seconds;i+= step){
+        //using MediaMetadataRetrivier -which works in microsecond units
+        long step = Math.round(1000*1000/frameRate);  //mkae steps in microsecond
+        for(int i = 1000000;i<seconds;i+= step){   // ignoring the first second
+            // the MediaMetadataRetriever.getFrameAtTime() takes in microseconds 10^-6
             Bitmap bitmap = fmpeg.getFrameAtTime(i, MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
             Bitmap resizedBitmap = getResizeBitmap(bitmap,imgSize);
             resizedBitmap = resizedBitmap.copy(Bitmap.Config.ARGB_8888,true);

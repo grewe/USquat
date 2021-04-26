@@ -232,7 +232,7 @@ public abstract class Classifier {
         // TODO
     }
         private List<Recognition> test;
-        public List<Recognition> getFrames(final List<Bitmap> processing_frames ){
+        public List<Recognition> getFramesAndProcess(final List<Bitmap> processing_frames ){
         Log.d(TAG,String.valueOf(processing_frames.size()));
             return recognizeImages(processing_frames);
 
