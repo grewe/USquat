@@ -94,6 +94,12 @@ public class Camera2VideoFragment extends Fragment
      * Button to record video
      */
     private Button mButtonVideo;
+    /**
+     * Button to switch view
+     */
+    private Button mButtonSwich;
+
+    private int OPTION;
 
     /**
      * A reference to the opened {@link android.hardware.camera2.CameraDevice}.
@@ -293,6 +299,8 @@ public class Camera2VideoFragment extends Fragment
         mTextureView = (AutoFitTextureView) view.findViewById(R.id.texture);
         mButtonVideo = (Button) view.findViewById(R.id.record);
         mButtonVideo.setOnClickListener(this);
+        mButtonSwich = (Button) view.findViewById(R.id.switch_camera);
+        mButtonSwich.setOnClickListener(this);
         view.findViewById(R.id.info).setOnClickListener(this);
     }
 
@@ -341,6 +349,13 @@ public class Camera2VideoFragment extends Fragment
                             .show();
                 }
                 break;
+            }
+            case R.id.switch_camera:{
+                if (OPTION == 1){
+                    OPTION = 0;
+                } else {
+                    OPTION = 1;
+                }
             }
         }
     }
@@ -445,7 +460,7 @@ public class Camera2VideoFragment extends Fragment
             if (!mCameraOpenCloseLock.tryAcquire(2500, TimeUnit.MILLISECONDS)) {
                 throw new RuntimeException("Time out waiting to lock camera opening.");
             }
-            String cameraId = manager.getCameraIdList()[0];
+            String cameraId = manager.getCameraIdList()[1];
             Log.d(TAG,cameraId);
 
             // Choose the sizes for camera preview and video recording

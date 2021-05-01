@@ -28,7 +28,7 @@ public class ClassifierActivity extends AppCompatActivity {
     private List<Bitmap> frames;
     private final String TAG = "ClassifierActivity";
     private Classifier classifier;
-    public List<Classifier.Recognition> temp;
+    public List<Classifier.Recognition> results;
     final Device device = Device.CPU;
     final int numThreads = 2;
 
@@ -98,11 +98,15 @@ public class ClassifierActivity extends AppCompatActivity {
 
     }
 
+    /* This will call getFramesAndProcess from Classifier and return the recognition results
+    * */
     protected void processing(){
         if (classifier != null){
             // Processing the frames
-          temp = classifier.getFramesAndProcess(frames);
-          Log.d(TAG,String.valueOf(temp));
+            // result will look like this - priority queue [shallow] 99.5 [bent_over] 0.1
+          results = classifier.getFramesAndProcess(frames);
+          Log.d(TAG,String.valueOf(results));
+            Log.d(TAG,String.valueOf(String.format("%1$TH:%1$TM:%1$TS",System.currentTimeMillis())));
         }
         FLAG_PROCESSING_DONE= true;
        this.runOnUiThread(new Runnable() {
@@ -119,7 +123,7 @@ public class ClassifierActivity extends AppCompatActivity {
     }
 
     private void initializePlayer(){
-        String result = String.valueOf(temp.get(0));
+        String result = String.valueOf(results.get(0));
         String[] detected = result.split("\\s+");
         Log.d(TAG, detected[1]);
         mTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP,28);
@@ -151,6 +155,8 @@ public class ClassifierActivity extends AppCompatActivity {
         Uri videoUri = getMedia(VIDEO_SAMPLE);
         mVideoView.setVideoURI(videoUri);
         mVideoView.start();
+        mVideoView.requestFocus();
+        mVideoView.setOnPreparedListener(mp -> mp.setLooping(true));
     }
 
     private void releasePlayer(){
