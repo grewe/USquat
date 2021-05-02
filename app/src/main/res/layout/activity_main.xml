@@ -29,4 +29,12 @@
             android:src="@drawable/ic_baseline_camera_alt_24"
             app:layout_anchor="@id/bottom_app_bar"
             />
-    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+    <TextView
+        android:id="@+id/classification_message_text_view"
+        android:layout_width="match_parent"
+        android:layout_height="161dp"
+        android:text="Welcome to USquat"
+        android:textAlignment="center" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
