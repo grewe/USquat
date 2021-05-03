@@ -243,82 +243,103 @@ public abstract class Classifier {
         /** Runs inference and returns the classification results.
          * */
         public List<Recognition> recognizeImages(final List<Bitmap> processing_frames) {
+//
+//            int max_frame = 40;
+//            int whole = processing_frames.size() / 40;
+//            double fraction = (double) Math.round(((processing_frames.size() / 40.0) % 1) * 100)/100 ;
+//            boolean odd = true;
+//            int current_frame = 1;
+//            int sample_every_k_frame = Math.max(1, whole);
+//            int step = 0;
+//            while (true) {
 
-            int max_frame = 40;
-            int whole = processing_frames.size() / 40;
-            double fraction = (double) Math.round(((processing_frames.size() / 40.0) % 1) * 100)/100 ;
-            boolean odd = true;
-            int current_frame = 1;
-            int sample_every_k_frame = Math.max(1, whole);
-            int step = 0;
-            while (true) {
-                if (fraction >= 0.0 && fraction <= 0.3 && current_frame < processing_frames.size() - whole) {
-                    if (current_frame % sample_every_k_frame == 0) {
-                        current_frame += sample_every_k_frame;
-                        inputImageBuffer = loadImage(processing_frames.get(current_frame));
-                        extractorTflite.run(inputImageBuffer.getBuffer(), lstmInput[step]);
-                        step += 1;
-                        max_frame -= 1;
-                    }
-                } else if (fraction <= 0.7 && fraction > 0.3 && current_frame < processing_frames.size() - sample_every_k_frame +1) {
-                    if (odd) {
-                        current_frame += sample_every_k_frame;
-                        odd = false;
-                        inputImageBuffer = loadImage(processing_frames.get(current_frame));
-                        extractorTflite.run(inputImageBuffer.getBuffer(), lstmInput[step]);
-                        step += 1;
-                        max_frame -= 1;
+//                if (fraction >= 0.0 && fraction <= 0.3 && current_frame < processing_frames.size() - whole) {
+//                    if (current_frame % sample_every_k_frame == 0) {
+//                        current_frame += sample_every_k_frame;
+//                        inputImageBuffer = loadImage(processing_frames.get(current_frame));
+//                        extractorTflite.run(inputImageBuffer.getBuffer(), lstmInput[step]);
+//                        if(current_frame == processing_frames.size() || current_frame > processing_frames.size()){
+//                            break;
+//                        }
+//                        step += 1;
+//                        max_frame -= 1;
+//                    }
+//                } else if (fraction <= 0.7 && fraction > 0.3 && current_frame < processing_frames.size() - sample_every_k_frame + 1) {
+//                    if (odd) {
+//                        current_frame += sample_every_k_frame;
+//                        odd = false;
+//                        inputImageBuffer = loadImage(processing_frames.get(current_frame));
+//                        extractorTflite.run(inputImageBuffer.getBuffer(), lstmInput[step]);
+//                        if(current_frame == processing_frames.size() || current_frame > processing_frames.size()){
+//                            break;
+//                        }
+//                        step += 1;
+//                        max_frame -= 1;
+//
+//                    } else {
+//                        current_frame += (whole + 1);
+//                        odd = true;
+//                        inputImageBuffer = loadImage(processing_frames.get(current_frame));
+//                        extractorTflite.run(inputImageBuffer.getBuffer(), lstmInput[step]);
+//                        if(current_frame == processing_frames.size()|| current_frame > processing_frames.size()){
+//                            break;
+//                        }
+//                        step += 1;
+//                        max_frame -= 1;
+//
+//                    }
+//                } else if (fraction < 0.7 && current_frame < processing_frames.size() - (whole + 3)) {
+//                    if (odd) {
+//                        current_frame += whole;
+//                        odd = false;
+//                        inputImageBuffer = loadImage(processing_frames.get(current_frame));
+//                        extractorTflite.run(inputImageBuffer.getBuffer(), lstmInput[step]);
+//                        if (current_frame == processing_frames.size()|| current_frame > processing_frames.size()) {
+//                            break;
+//                        }
+//                        step += 1;
+//                        max_frame -= 1;
+//
+//                    } else {
+//                        current_frame += (whole + 2);
+//                        odd = true;
+//                        inputImageBuffer = loadImage(processing_frames.get(current_frame));
+//                        extractorTflite.run(inputImageBuffer.getBuffer(), lstmInput[step]);
+//                        if (current_frame == processing_frames.size()|| current_frame > processing_frames.size()) {
+//                            break;
+//                        }
+//                        step += 1;
+//                        max_frame -= 1;
+//                    }
+//                }
+////                } else{
+////                    break;
+////                }
+//
+//                if (max_frame == 1 || step == 39 ) {
+//                    break;
+//                }
+//
+//            }
+//            return recognizeImageLSTM();
+//        }
 
-                    } else {
-                        current_frame += (whole + 1);
-                        odd = true;
-                        inputImageBuffer = loadImage(processing_frames.get(current_frame));
-                        extractorTflite.run(inputImageBuffer.getBuffer(), lstmInput[step]);
-                        step += 1;
-                        max_frame -= 1;
-
-                    }
-                } else if (fraction < 0.7 && current_frame < processing_frames.size() - (whole + 2)) {
-                    if (odd) {
-                        current_frame += whole;
-                        odd = false;
-                        inputImageBuffer = loadImage(processing_frames.get(current_frame));
-                        extractorTflite.run(inputImageBuffer.getBuffer(), lstmInput[step]);
-                        step += 1;
-                        max_frame -= 1;
-
-                    } else {
-                        current_frame += (whole + 2);
-                        odd = true;
-                        inputImageBuffer = loadImage(processing_frames.get(current_frame));
-                        extractorTflite.run(inputImageBuffer.getBuffer(), lstmInput[step]);
-                        step += 1;
-                        max_frame -= 1;
-                    }
+            // Only get the first 40 frames.
+             Log.d(TAG,String.valueOf(String.format("%1$TH:%1$TM:%1$TS",System.currentTimeMillis())));
+            for (int i = 0; i < 40; i++) {
+                if (i == processing_frames.size()) {
+                    Log.d(TAG, String.valueOf(String.format("%1$TH:%1$TM:%1$TS", System.currentTimeMillis())));
+                    float ratio = processing_frames.size() / 40;
+                    Log.d(TAG, String.valueOf(ratio));
+                    return recognizeImageLSTM();
                 }
-                if (max_frame == 0 || step == 39) {
-                    break;
-                }
+                inputImageBuffer = loadImage(processing_frames.get(i));
+                extractorTflite.run(inputImageBuffer.getBuffer(), lstmInput[i]);
 
             }
+            Log.d(TAG, String.valueOf(String.format(" start LSTM: %1$TH:%1$TM:%1$TS", System.currentTimeMillis())));
             return recognizeImageLSTM();
         }
-
-        // Only get the first 40 frames.
-        // Log.d(TAG,String.valueOf(String.format("%1$TH:%1$TM:%1$TS",System.currentTimeMillis())));
-//        for(int i = 0; i < 40; i++){
-//            if(i == processing_frames.size()){
-//                Log.d(TAG,String.valueOf(String.format("%1$TH:%1$TM:%1$TS",System.currentTimeMillis())));
-//                float ratio = processing_frames.size()/40;
-//                Log.d(TAG,String.valueOf(ratio));
-//                return recognizeImageLSTM();
-//            }
-//             inputImageBuffer = loadImage(processing_frames.get(i));
-//             extractorTflite.run(inputImageBuffer.getBuffer(),lstmInput[i]);
-//
-//         }
-//            Log.d(TAG,String.valueOf(String.format("%1$TH:%1$TM:%1$TS",System.currentTimeMillis())));
-//           return recognizeImageLSTM();
 
 
 

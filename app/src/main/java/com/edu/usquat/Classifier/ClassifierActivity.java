@@ -127,7 +127,7 @@ public class ClassifierActivity<ProgessBar> extends AppCompatActivity {
      results = classifier.getFramesAndProcess(frames);
 
           Log.d(TAG,String.valueOf(results));
-            Log.d(TAG,String.valueOf(String.format("%1$TH:%1$TM:%1$TS",System.currentTimeMillis())));
+            Log.d(TAG,String.valueOf(String.format("End of LSTM: %1$TH:%1$TM:%1$TS",System.currentTimeMillis())));
         }
         FLAG_PROCESSING_DONE= true;
        this.runOnUiThread(new Runnable() {
@@ -174,6 +174,13 @@ public class ClassifierActivity<ProgessBar> extends AppCompatActivity {
                 message = "Your knees are collapsing in";
                 break;
         }
+        mTextView.setText(message);
+        Uri videoUri = getMedia(VIDEO_SAMPLE);
+        mVideoView.setVideoURI(videoUri);
+        mVideoView.start();
+        mVideoView.requestFocus();
+        mVideoView.setOnPreparedListener(mp -> mp.setLooping(true));
+
 // Added code for switch here
         // keep code in if statement intact since that was Kelly's code
         mode = (Switch) findViewById(R.id.switch1);
@@ -251,12 +258,12 @@ public class ClassifierActivity<ProgessBar> extends AppCompatActivity {
                     rowSpan, colspan);
             gridLayout.addView(oImageView, gridParam);
         }*/
-        mTextView.setText(message);
-        Uri videoUri = getMedia(VIDEO_SAMPLE);
-        mVideoView.setVideoURI(videoUri);
-        mVideoView.start();
-        mVideoView.requestFocus();
-        mVideoView.setOnPreparedListener(mp -> mp.setLooping(true));
+//        mTextView.setText(message);
+//        Uri videoUri = getMedia(VIDEO_SAMPLE);
+//        mVideoView.setVideoURI(videoUri);
+//        mVideoView.start();
+//        mVideoView.requestFocus();
+//        mVideoView.setOnPreparedListener(mp -> mp.setLooping(true));
 
                 }
             }
