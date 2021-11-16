@@ -460,7 +460,13 @@ public class Camera2VideoFragment extends Fragment
             if (!mCameraOpenCloseLock.tryAcquire(2500, TimeUnit.MILLISECONDS)) {
                 throw new RuntimeException("Time out waiting to lock camera opening.");
             }
-            String cameraId = manager.getCameraIdList()[1];
+
+            String cameraId;
+            String[] cameraIDList = manager.getCameraIdList();
+            if(cameraIDList.length > 1)
+                cameraId = manager.getCameraIdList()[1];
+            else
+                cameraId = cameraIDList[0];
             Log.d(TAG,cameraId);
 
             // Choose the sizes for camera preview and video recording
