@@ -225,6 +225,7 @@ public abstract class Classifier {
 
 // **********************************CREATE LSTM MODEL HERE ***************************************
 
+        //Now decide on the Model to use for LSTM - orginal (kelly) or LookLEarn(ankush)
         if(this.mUSquatModel == "Original")
             lstmModel = FileUtil.loadMappedFile(activity, "lstm_classifier.tflite");
         else
