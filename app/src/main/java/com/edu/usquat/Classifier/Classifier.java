@@ -9,6 +9,8 @@ import android.os.FileUtils;
 import android.util.Log;
 import android.util.TimingLogger;
 
+import com.edu.usquat.R;
+
 import org.tensorflow.lite.DataType;
 import org.tensorflow.lite.Interpreter;
 import org.tensorflow.lite.gpu.GpuDelegate;
@@ -71,6 +73,10 @@ public abstract class Classifier {
     protected Interpreter lstmTflite;
     final AssetManager assetManager = null;
     final float confidenceInterval = 0.5f;
+
+
+    //parameter to select the LSTM Model either Original (kelly) or LookLearn(ankush)
+    private String mUSquatModel;
 
     /** Options for configuring the Interpreter. */
     private final Interpreter.Options tfliteOptions = new Interpreter.Options();
@@ -181,6 +187,12 @@ public abstract class Classifier {
      *
      * */
     protected Classifier(Activity activity, Device device, int numThreads,AssetManager assetManager) throws IOException {
+
+        //read in the USquatModel specification from the strings folder (strings.xml)  of the application
+        this.mUSquatModel= activity.getApplicationContext().getResources().getString(R.string.USquatModel);
+        Log.d(TAG,"USquatModel option: "+this.mUSquatModel);
+
+
         featureExtractorModel = FileUtil.loadMappedFile(activity, getModelPath());
         switch (device) {
             case GPU:
@@ -213,7 +225,10 @@ public abstract class Classifier {
 
 // **********************************CREATE LSTM MODEL HERE ***************************************
 
-        lstmModel = FileUtil.loadMappedFile(activity, "lstm_classifier.tflite");
+        if(this.mUSquatModel == "Original")
+            lstmModel = FileUtil.loadMappedFile(activity, "lstm_classifier.tflite");
+        else
+            lstmModel = FileUtil.loadMappedFile(activity, "lstm_lookLearn_classifier.tflite");
 
 
         // Create a TFLite interpreter instance

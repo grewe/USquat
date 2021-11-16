@@ -32,6 +32,8 @@ public class ClassifierActivity extends AppCompatActivity {
     final Device device = Device.CPU;
     final int numThreads = 2;
 
+
+
     private static String VIDEO_SAMPLE;
     private VideoView mVideoView;
     private TextView mTextView;
@@ -41,16 +43,30 @@ public class ClassifierActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
        setContentView(R.layout.classification_layout);
+
+
         frames = BitmapDTO.getInstance().getBitmaps();
         Log.d(TAG,String.valueOf(frames.size()));
+
+        //create the classifier model
         recreateClassifier(device, numThreads);
         if (classifier == null) {
             Log.e(TAG,"No classifier on preview!");
             return;
         }
+
+        //get handles to reporting text area (mTextView) to report classification results
+        // and handle to video display view if corrrectie video is necessary (not a good squat)
         mVideoView = findViewById(R.id.video_view);
         mTextView = findViewById(R.id.classification_message_text_view);
+
+
+        //tell user to wait while processing video
         mTextView.setText("PLEASE WAIT");
+
+
+
+        //start processing - grab 40(x) frames, sent to feature extractor then to the USquat Classifier in processing()
         FLAG_PROCESSING_DONE = false;
         new Thread(){
             @Override
@@ -79,6 +95,7 @@ public class ClassifierActivity extends AppCompatActivity {
         releasePlayer();
     }
 
+    //create classifier (if already open, close and recreate)
     private void recreateClassifier(Device device, int numThreads) {
         if (classifier != null) {
             Log.d(TAG,"Closing classifier.");
@@ -88,6 +105,7 @@ public class ClassifierActivity extends AppCompatActivity {
         try {
             Log.d(TAG,
                     String.format("Creating classifier (device=%s, numThreads=%d)",device,numThreads));
+            //create classifier
             classifier = Classifier.create(this, device, numThreads,getAssets());
 
         } catch (IOException e) {
@@ -98,6 +116,7 @@ public class ClassifierActivity extends AppCompatActivity {
 
     }
 
+    //MAIN processing method
     protected void processing(){
         if (classifier != null){
             // Processing the frames
