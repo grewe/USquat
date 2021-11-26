@@ -1,0 +1,5 @@
+bodySquat
+bodyTall
+foot
+hip
+knee

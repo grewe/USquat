@@ -5,4 +5,7 @@
     <!-- Default screen margins, per the Android Design guidelines. -->
     <dimen name="activity_horizontal_margin">16dp</dimen>
     <dimen name="activity_vertical_margin">16dp</dimen>
+    <item format="float" name="backgroundPercent" type="dimen">0.0</item>
+    <item format="float" name="bodyPercent" type="dimen">0.8</item>
+    <item format="float" name="bodyPartPercent" type="dimen">1.0</item>
 </resources>

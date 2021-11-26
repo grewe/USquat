@@ -9,6 +9,7 @@ import android.os.FileUtils;
 import android.util.Log;
 import android.util.TimingLogger;
 
+import com.edu.usquat.LookLearn.LookLearnProcessor;
 import com.edu.usquat.R;
 
 import org.tensorflow.lite.DataType;
@@ -89,6 +90,9 @@ public abstract class Classifier {
 
     public int frame = 0; // FRAME NUMBER
     public int frame2 = 0;
+
+    //LookLearn Processor
+    LookLearnProcessor lookLearnProcessor;
 
 
     /** Load Tflite Model */
@@ -192,6 +196,9 @@ public abstract class Classifier {
         this.mUSquatModel= activity.getApplicationContext().getResources().getString(R.string.USquatModel);
         Log.d(TAG,"USquatModel option: "+this.mUSquatModel);
 
+        //create instance of LookLearnProcessor
+        this.lookLearnProcessor = new LookLearnProcessor(activity.getApplicationContext());
+
 
         featureExtractorModel = FileUtil.loadMappedFile(activity, getModelPath());
         switch (device) {
@@ -250,8 +257,12 @@ public abstract class Classifier {
     }
         private List<Recognition> test;
         public List<Recognition> getFramesAndProcess(final List<Bitmap> processing_frames ){
-        Log.d(TAG,String.valueOf(processing_frames.size()));
-            return recognizeImages(processing_frames);
+            Log.d(TAG,String.valueOf(processing_frames.size()));
+
+            if(this.mUSquatModel == "LookLearn")
+                return recognizeLookLearnImages(processing_frames);
+            else
+                return recognizeImages(processing_frames);
 
         }
 
@@ -358,6 +369,115 @@ public abstract class Classifier {
         }
 
 
+    // TODO: sliding window for
+    /** Runs inference and returns the classification results.
+     * First processes each of the image bitmaps inside the processing_frames list and creates
+     * a Forced Attention Look Learn Image
+     * */
+    public List<Recognition> recognizeLookLearnImages(final List<Bitmap> processing_frames) {
+//
+//            int max_frame = 40;
+//            int whole = processing_frames.size() / 40;
+//            double fraction = (double) Math.round(((processing_frames.size() / 40.0) % 1) * 100)/100 ;
+//            boolean odd = true;
+//            int current_frame = 1;
+//            int sample_every_k_frame = Math.max(1, whole);
+//            int step = 0;
+//            while (true) {
+
+//                if (fraction >= 0.0 && fraction <= 0.3 && current_frame < processing_frames.size() - whole) {
+//                    if (current_frame % sample_every_k_frame == 0) {
+//                        current_frame += sample_every_k_frame;
+//                        inputImageBuffer = loadImage(processing_frames.get(current_frame));
+//                        extractorTflite.run(inputImageBuffer.getBuffer(), lstmInput[step]);
+//                        if(current_frame == processing_frames.size() || current_frame > processing_frames.size()){
+//                            break;
+//                        }
+//                        step += 1;
+//                        max_frame -= 1;
+//                    }
+//                } else if (fraction <= 0.7 && fraction > 0.3 && current_frame < processing_frames.size() - sample_every_k_frame + 1) {
+//                    if (odd) {
+//                        current_frame += sample_every_k_frame;
+//                        odd = false;
+//                        inputImageBuffer = loadImage(processing_frames.get(current_frame));
+//                        extractorTflite.run(inputImageBuffer.getBuffer(), lstmInput[step]);
+//                        if(current_frame == processing_frames.size() || current_frame > processing_frames.size()){
+//                            break;
+//                        }
+//                        step += 1;
+//                        max_frame -= 1;
+//
+//                    } else {
+//                        current_frame += (whole + 1);
+//                        odd = true;
+//                        inputImageBuffer = loadImage(processing_frames.get(current_frame));
+//                        extractorTflite.run(inputImageBuffer.getBuffer(), lstmInput[step]);
+//                        if(current_frame == processing_frames.size()|| current_frame > processing_frames.size()){
+//                            break;
+//                        }
+//                        step += 1;
+//                        max_frame -= 1;
+//
+//                    }
+//                } else if (fraction < 0.7 && current_frame < processing_frames.size() - (whole + 3)) {
+//                    if (odd) {
+//                        current_frame += whole;
+//                        odd = false;
+//                        inputImageBuffer = loadImage(processing_frames.get(current_frame));
+//                        extractorTflite.run(inputImageBuffer.getBuffer(), lstmInput[step]);
+//                        if (current_frame == processing_frames.size()|| current_frame > processing_frames.size()) {
+//                            break;
+//                        }
+//                        step += 1;
+//                        max_frame -= 1;
+//
+//                    } else {
+//                        current_frame += (whole + 2);
+//                        odd = true;
+//                        inputImageBuffer = loadImage(processing_frames.get(current_frame));
+//                        extractorTflite.run(inputImageBuffer.getBuffer(), lstmInput[step]);
+//                        if (current_frame == processing_frames.size()|| current_frame > processing_frames.size()) {
+//                            break;
+//                        }
+//                        step += 1;
+//                        max_frame -= 1;
+//                    }
+//                }
+////                } else{
+////                    break;
+////                }
+//
+//                if (max_frame == 1 || step == 39 ) {
+//                    break;
+//                }
+//
+//            }
+//            return recognizeImageLSTM();
+//        }
+
+
+        //First create the series of Forced Attention LookLearn images from the set stored in processing_frames
+        //overwrite the images into processing_frames
+        List<Bitmap> lookLearn_processing_frames = this.lookLearnProcessor.createAttentionImages(processing_frames);
+
+        // Only get the first 40 frames.
+        Log.d(TAG,String.valueOf(String.format("%1$TH:%1$TM:%1$TS",System.currentTimeMillis())));
+        for (int i = 0; i < 40; i++) {
+            if (i == lookLearn_processing_frames.size()) {
+                Log.d(TAG, String.valueOf(String.format("%1$TH:%1$TM:%1$TS", System.currentTimeMillis())));
+                float ratio = lookLearn_processing_frames.size() / 40;
+                Log.d(TAG, String.valueOf(ratio));
+                return recognizeImageLSTM();
+            }
+            inputImageBuffer = loadImage(lookLearn_processing_frames.get(i));
+            //perform feature extraction on the frame and store it in lstmInput
+            extractorTflite.run(inputImageBuffer.getBuffer(), lstmInput[i]);
+
+        }
+        Log.d(TAG, String.valueOf(String.format(" start LSTM: %1$TH:%1$TM:%1$TS", System.currentTimeMillis())));
+        return recognizeImageLSTM();
+    }
 
 
 
