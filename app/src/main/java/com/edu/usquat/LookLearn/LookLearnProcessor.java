@@ -168,7 +168,7 @@ public class LookLearnProcessor{
             LOGGER.i("BodyPartCNN took to process 1 image ", lastProcessingTimeMs);
 
             //STEP3: create the forced Attension image stored in b that uses the detections
-            // SEE PYTHON CODE
+            // SEE PYTHON CODE -- ANKUSH we did not do ANY and ALL recognitions above the threshold --only one body, etc.
             //cycling through all of the recognition detections in my image I am currently processing
             for (final Classifier.Recognition result : results) {  //loop variable is result, represents one detection
 
