@@ -22,7 +22,7 @@ import androidx.core.content.res.ResourcesCompat;
 
 
 
-public class LookLearnProcessor{
+public class LookLearnProcessor {
 
     TFLiteObjectDetectionEfficientDet detector;
     Context context;
@@ -53,7 +53,6 @@ public class LookLearnProcessor{
     private static final String TF_OD_API_LABELS_FILE = "file:///android_asset/BodyPartCNNLabelMap.txt";
 
 
-
     //???NEED not using Activity
     // private static final DetectorActivity.DetectorMode MODE = DetectorActivity.DetectorMode.TF_OD_API;   //Using Object Detection API
 
@@ -73,12 +72,9 @@ public class LookLearnProcessor{
     private long lastProcessingTimeMs;   //last time processed a frame
 
 
-
-
-
     //constructor that will get passed the Activity which own's it's context
     // reads in parameters used by LookLearn
-    public LookLearnProcessor(Context c ){
+    public LookLearnProcessor(Context c) {
         this.context = c;
 
         //retrieve the percentages used in the forced attention Look Learn image creation
@@ -95,48 +91,52 @@ public class LookLearnProcessor{
      * Creates a forced attention LookLearn Image pased on the visualization percentages
      * represented by backgroundPercent,
      * input_frames = list of image bitmaps
+     *
      * @return list of forced attention Look Learn Images
      */
     public boolean boxInBox(box1, box2) {
-        if (box1[0] >= box2[0] && box1[ 0]<=box2[2] &&   //#x1 of box1 is in x range of box2
-                box1[1] >= box2[1] && box1[ 1]<=box2[3] &&   //y1 of box1 is in y range of box2
-                box1[2] >= box2[0] && box1[ 2]<=box2[2] &&   //#x2 of box1 is in x range of box2
-                box1[3] >= box2[1] && box1[ 3]<=box2[3] )   //#y2 of box1 is in y range of box 2
+        if (box1[0] >= box2[0] && box1[0] <= box2[2] &&   //#x1 of box1 is in x range of box2
+                box1[1] >= box2[1] && box1[1] <= box2[3] &&   //y1 of box1 is in y range of box2
+                box1[2] >= box2[0] && box1[2] <= box2[2] &&   //#x2 of box1 is in x range of box2
+                box1[3] >= box2[1] && box1[3] <= box2[3])   //#y2 of box1 is in y range of box 2
             return True;
         else
             return False;
     }
 
     public boolean fuzzyBoxInBox(box1, box2) {
-        double fuzz_pixs_normalized=0.1;
-        if (box1[0] >= box2[0] - fuzz_pixs_normalized && box1[ 0]<=box2[2] + fuzz_pixs_normalized //x1 of box1 is in x range of box2
+        double fuzz_pixs_normalized = 0.1;
+        if (box1[0] >= box2[0] - fuzz_pixs_normalized && box1[0] <= box2[2] + fuzz_pixs_normalized //x1 of box1 is in x range of box2
                 &&
-                box1[1] >= box2[1] - fuzz_pixs_normalized && box1[ 1]<=box2[3] + fuzz_pixs_normalized &&   //  y1 of box1 is in y range of box2
+                box1[1] >= box2[1] - fuzz_pixs_normalized && box1[1] <= box2[3] + fuzz_pixs_normalized &&   //  y1 of box1 is in y range of box2
 
-                box1[2] >= box2[0] - fuzz_pixs_normalized && box1[ 2]<=box2[2] + fuzz_pixs_normalized &&   //x2 of box1 is in x range of box2
+                box1[2] >= box2[0] - fuzz_pixs_normalized && box1[2] <= box2[2] + fuzz_pixs_normalized &&   //x2 of box1 is in x range of box2
 
-                box1[3] >= box2[1] - fuzz_pixs_normalized && box1[ 3]<=box2[3] + fuzz_pixs_normalized)     //y2 of box1 is in y range of box 2
+                box1[3] >= box2[1] - fuzz_pixs_normalized && box1[3] <= box2[3] + fuzz_pixs_normalized)     //y2 of box1 is in y range of box 2
 
             return True;
         else
             return False;
     }
-    public static boolean inBox(box, x,y) {
-        if (x <= box[2] && x >=box[0] && y<=box[3] && y>=box[1])
+
+    public static boolean inBox(box, x, y) {
+        if (x <= box[2] && x >= box[0] && y <= box[3] && y >= box[1])
             return True;
         else
             return False;
     }
-    public boolean inBox(box, r,c, image_size) {
-        if (r <= box[2] * image_size && r >=box[0] * image_size && c<=box[3] * image_size && c>=
+
+    public boolean inBox(box, r, c, image_size) {
+        if (r <= box[2] * image_size && r >= box[0] * image_size && c <= box[3] * image_size && c >=
                 box[1] * image_size)
             return True;
         else
             return False;
     }
-    public static boolean inBoxes(boxes, x,y) {
+
+    public static boolean inBoxes(boxes, x, y) {
         boolean inBoxesFlag = False;
-        for (box ; box < boxes ; box++ ) {
+        for box in boxes {
             if (inBox(box, x, y))
                 inBoxesFlag = True;
             break;
@@ -144,16 +144,17 @@ public class LookLearnProcessor{
         return inBoxesFlag;
     }
 
-    public static boolean inBoxes(boxes, r,c, image_size):
+    public static boolean inBoxes(boxes, r, c, image_size){
+
     boolean inBoxesFlag = False;
 
-    for (box ; box < boxes ; box++ ){
+    for box in boxes{
         if (inBox(box, r, c, image_size))
             inBoxesFlag = True;
         break;
     }
             return inBoxesFlag;
-
+}
     public List<Bitmap> createAttentionImages(List<Bitmap> input_frames) {
         int [] BODY_LABELS = new int [1,2];
         int [] BODY_PART_LABELS =new int [3,4,5];
@@ -326,7 +327,41 @@ public class LookLearnProcessor{
                     }
                     //Select best box either a body or any part
                     //
+                    int left = (int) location.left;
+                    int right = (int) location.right;
+                    int top = (int) location.top;
+                    int bottom = (int) location.bottom;
 
+                    for (int  x= left; x < right; ++x) {
+
+
+                        for (int y = top; y< bottom ; ++y) {
+                            if (inBoxes(insideBodyPartBoxes, x, y, IMG_SIZE)) {
+                                pixel = b.getPixel(x, y);
+                                // apply filtering on each channel R, G, B
+                                A = Color.alpha(pixel);
+                                R = (int) (Color.red(pixel) * bodyPartPercent);
+                                G = (int) (Color.green(pixel) * bodyPartPercent);
+                                B = (int) (Color.blue(pixel) * bodyPartPercent);
+                            }
+                            else if(inBox(bodyBox, x, y, IMG_SIZE)) {
+                                pixel = b.getPixel(x, y);
+                                // apply filtering on each channel R, G, B
+                                A = Color.alpha(pixel);
+                                R = (int) (Color.red(pixel) * bodyPercent);
+                                G = (int) (Color.green(pixel) * bodyPercent);
+                                B = (int) (Color.blue(pixel) * bodyPercent)
+                            }
+                            else {
+                                pixel = b.getPixel(x, y);
+                                // apply filtering on each channel R, G, B
+                                A = Color.alpha(pixel);
+                                R = (int) (Color.red(pixel) * backgroundPercent);
+                                G = (int) (Color.green(pixel) * backgroundPercent);
+                                B = (int) (Color.blue(pixel) * backgroundPercent);
+                            }
+                        }
+                    }
                 }
 
 
