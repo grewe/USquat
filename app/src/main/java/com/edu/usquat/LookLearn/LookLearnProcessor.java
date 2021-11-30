@@ -119,14 +119,14 @@ public class LookLearnProcessor {
             return False;
     }
 
-    public static boolean inBox(box, x, y) {
+    public static boolean inBox(box[], x, y) {
         if (x <= box[2] && x >= box[0] && y <= box[3] && y >= box[1])
             return True;
         else
             return False;
     }
 
-    public boolean inBox(box, r, c, image_size) {
+    public boolean inBox(box[], r, c, image_size) {
         if (r <= box[2] * image_size && r >= box[0] * image_size && c <= box[3] * image_size && c >=
                 box[1] * image_size)
             return True;
@@ -159,27 +159,27 @@ public class LookLearnProcessor {
         int [] BODY_LABELS = new int [1,2];
         int [] BODY_PART_LABELS =new int [3,4,5];
   //body box for highest certainty box
-  int bodyBox[] = new int[-1,-1,-1,-1];
-  //STEP1:  find the best Body box --highest certainty
-  // sort through and find the best body detection above teh min_score_threshol
-  for (int i = 0; i < certainties.size; i++) {
-      if (class_indices[i] == BODY_LABELS ){
-          if (certainties[i] > min_score_thresh) {
-              bodyBox = boxes[i];
-              break;
+        int bodyBox[] = new int[-1,-1,-1,-1];
+          //STEP1:  find the best Body box --highest certainty
+          // sort through and find the best body detection above teh min_score_threshol
+        for (int i = 0; i < certainties.size(); i++) {
+            if (class_indices[i] == BODY_LABELS ){
+                if (certainties[i] > min_score_thresh) {
+                      bodyBox = boxes[i];
+                      break;
+                  }
+              }
           }
-      }
-  }
   //if there is no body above threshold then simply return the orinigal iamge
   if(bodyBox[0] ==-1)
-
+      return input_frames;
 
   int  insideBodyPartBoxes[] = new int[];
 
 
   //STEP 2:  get all the bodyPart boxes that are inside our selected bodyBOx
   //grab all of the bodyPart boxes above min_score_threshold that are inside the bodBox
-  for(int i=0; i <certainties.size; i++) {
+  for(int i=0; i <certainties.size(); i++) {
       if (certainties[i] < min_score_thresh || class_indices[i] == BODY_LABELS)
       continue;
       if (fuzzyBoxInBox(boxes[i], bodyBox) == True)
@@ -226,7 +226,7 @@ public class LookLearnProcessor {
             toast.show();
 
         }
-
+        int IMG_SIZE = TF_OD_API_INPUT_SIZE;
         //get the image size from the first image in the input_frames
         int inputWidth = input_frames.get(0).getWidth();
         int inputHeight = input_frames.get(0).getHeight();
