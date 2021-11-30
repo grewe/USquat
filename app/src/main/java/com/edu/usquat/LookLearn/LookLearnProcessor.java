@@ -97,7 +97,110 @@ public class LookLearnProcessor{
      * input_frames = list of image bitmaps
      * @return list of forced attention Look Learn Images
      */
+    public boolean boxInBox(box1, box2) {
+        if (box1[0] >= box2[0] && box1[ 0]<=box2[2] &&   //#x1 of box1 is in x range of box2
+                box1[1] >= box2[1] && box1[ 1]<=box2[3] &&   //y1 of box1 is in y range of box2
+                box1[2] >= box2[0] && box1[ 2]<=box2[2] &&   //#x2 of box1 is in x range of box2
+                box1[3] >= box2[1] && box1[ 3]<=box2[3] )   //#y2 of box1 is in y range of box 2
+            return True;
+        else
+            return False;
+    }
+
+    public boolean fuzzyBoxInBox(box1, box2) {
+        double fuzz_pixs_normalized=0.1;
+        if (box1[0] >= box2[0] - fuzz_pixs_normalized && box1[ 0]<=box2[2] + fuzz_pixs_normalized //x1 of box1 is in x range of box2
+                &&
+                box1[1] >= box2[1] - fuzz_pixs_normalized && box1[ 1]<=box2[3] + fuzz_pixs_normalized &&   //  y1 of box1 is in y range of box2
+
+                box1[2] >= box2[0] - fuzz_pixs_normalized && box1[ 2]<=box2[2] + fuzz_pixs_normalized &&   //x2 of box1 is in x range of box2
+
+                box1[3] >= box2[1] - fuzz_pixs_normalized && box1[ 3]<=box2[3] + fuzz_pixs_normalized)     //y2 of box1 is in y range of box 2
+
+            return True;
+        else
+            return False;
+    }
+    public static boolean inBox(box, x,y) {
+        if (x <= box[2] && x >=box[0] && y<=box[3] && y>=box[1])
+            return True;
+        else
+            return False;
+    }
+    public boolean inBox(box, r,c, image_size) {
+        if (r <= box[2] * image_size && r >=box[0] * image_size && c<=box[3] * image_size && c>=
+                box[1] * image_size)
+            return True;
+        else
+            return False;
+    }
+    public static boolean inBoxes(boxes, x,y) {
+        boolean inBoxesFlag = False;
+        for box in boxes {
+            if (inBox(box, x, y))
+                inBoxesFlag = True;
+            break;
+        }
+        return inBoxesFlag;
+    }
+
+    public static boolean inBoxes(boxes, r,c, image_size){
+    boolean inBoxesFlag = False;
+
+    for box in boxes{
+        if (inBox(box, r, c, image_size))
+            inBoxesFlag = True;
+        break;
+    }
+            return inBoxesFlag;
+
     public List<Bitmap> createAttentionImages(List<Bitmap> input_frames) {
+        int [] BODY_LABELS = new int [1,2];
+        int [] BODY_PART_LABELS =new int [3,4,5];
+  //body box for highest certainty box
+  int bodyBox[] = new int[-1,-1,-1,-1];
+  //STEP1:  find the best Body box --highest certainty
+  // sort through and find the best body detection above teh min_score_threshol
+  for (int i = 0; i < certainties.size; i++) {
+      if (class_indices[i] == BODY_LABELS ){
+          if (certainties[i] > min_score_thresh) {
+              bodyBox = boxes[i];
+              break;
+          }
+      }
+  }
+  //if there is no body above threshold then simply return the orinigal iamge
+  if(bodyBox[0] ==-1)
+
+
+  int  insideBodyPartBoxes[] = new int[];
+
+
+  //STEP 2:  get all the bodyPart boxes that are inside our selected bodyBOx
+  //grab all of the bodyPart boxes above min_score_threshold that are inside the bodBox
+  for(int i=0; i <certainties.size; i++) {
+      if (certainties[i] < min_score_thresh || class_indices[i] == BODY_LABELS)
+      continue;
+      if (fuzzyBoxInBox(boxes[i], bodyBox) == True)
+          insideBodyPartBoxes.append(boxes[i]);
+  }
+  //STEP 3: generate image
+
+  //now there is a body so at least that we will be able to visualize it so lets
+  //start by making copy of image.
+  //Copy the output Generated image to other
+
+
+  //copy in entire image, and at each pixel tell
+  // if in background wieght by
+  // if it is inside the bodyBox weight it by bodyVisualizationPercent,
+  //if it is in a body part INSIDE the bodyBox weight weight it by bodyPartVisualizationPercent
+  //#NOTE: x is equivalent to r or row  and y is equivalent to c or Column
+
+
+
+
+
 
         //saftey check
         if(input_frames.size() >0)
@@ -220,9 +323,10 @@ public class LookLearnProcessor{
                             }
                         }
 
-
                     }
-                    //repeat for body parts
+                    //Select best box either a body or any part
+                    //
+
                 }
 
 
@@ -241,4 +345,6 @@ public class LookLearnProcessor{
 
 
 }
+
+
 
