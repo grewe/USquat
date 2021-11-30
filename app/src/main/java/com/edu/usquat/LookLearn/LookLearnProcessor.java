@@ -136,7 +136,7 @@ public class LookLearnProcessor{
     }
     public static boolean inBoxes(boxes, x,y) {
         boolean inBoxesFlag = False;
-        for box in boxes {
+        for (box ; box < boxes ; box++ ) {
             if (inBox(box, x, y))
                 inBoxesFlag = True;
             break;
@@ -144,10 +144,10 @@ public class LookLearnProcessor{
         return inBoxesFlag;
     }
 
-    public static boolean inBoxes(boxes, r,c, image_size){
+    public static boolean inBoxes(boxes, r,c, image_size):
     boolean inBoxesFlag = False;
 
-    for box in boxes{
+    for (box ; box < boxes ; box++ ){
         if (inBox(box, r, c, image_size))
             inBoxesFlag = True;
         break;
