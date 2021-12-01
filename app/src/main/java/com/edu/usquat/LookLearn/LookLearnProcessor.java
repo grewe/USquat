@@ -9,6 +9,7 @@ import android.os.SystemClock;
 import android.widget.Toast;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.edu.usquat.LookLearn.env.ImageUtils;
@@ -88,104 +89,152 @@ public class LookLearnProcessor {
     }
 
     /**
-     * Creates a forced attention LookLearn Image pased on the visualization percentages
-     * represented by backgroundPercent,
+     * returns true if box1 is inside of box2
      * input_frames = list of image bitmaps
+     * box1, box 2 are RectF and contain left, right,top,bottom.
+     * NOTE: that the parameters of the RectF are floating points normalized between 0.0 and 1.0
+     * as these represent bounding boxes from an Ojbect Detection model and that is the output (normalized) not
+     * the raw pixel row and column values
      *
      * @return list of forced attention Look Learn Images
      */
-    public boolean boxInBox(box1, box2) {
-        if (box1[0] >= box2[0] && box1[0] <= box2[2] &&   //#x1 of box1 is in x range of box2
-                box1[1] >= box2[1] && box1[1] <= box2[3] &&   //y1 of box1 is in y range of box2
-                box1[2] >= box2[0] && box1[2] <= box2[2] &&   //#x2 of box1 is in x range of box2
-                box1[3] >= box2[1] && box1[3] <= box2[3])   //#y2 of box1 is in y range of box 2
-            return True;
+    public Boolean boxInBox(RectF box1, RectF box2) {
+        if(box1.left >=box2.left && box1.left <=box2.right &&  //left vertical edge of box 1 inside boxbox1.right <=box2.right &&  //the vertical edges of box 1 inside of box2
+           box1.right >= box2.left && box1.right <=box2.right && //right vertical edge of box 1 inside box2
+           box1.top >= box2.top && box1.top <= box2.bottom && //top horizontal edge of box 1 inside of box2
+           box1.bottom >= box2.top && box1.bottom <=box2.bottom ) {   //the horizontal edges of box 1 inside of box2
+            return Boolean.TRUE;
+        }
         else
-            return False;
+            return Boolean.FALSE;
+
     }
 
-    public boolean fuzzyBoxInBox(box1, box2) {
+    /**
+     *
+     *  Retruns true if box1 is within a % (local variable fuzz-Pixs_normalized) of box2's bounding values
+     *  box 1 and box2 are RectF with pixel locations represented from 0.0 to 1.0 which are normalized values
+     *  spanning the entire scene/image width/height
+     *    NOTE: that the parameters of the RectF are floating points normalized between 0.0 and 1.0
+     *     as these represent bounding boxes from an Ojbect Detection model and that is the output (normalized) not
+     *     the raw pixel row and column values
+     *     NOTE:  fuzz_pix_normalized = 0.1 would mean within 10% of width/height of the original image size
+     * @param box1
+     * @param box2
+     * @return
+     */
+    public Boolean fuzzyBoxInBox(RectF box1, RectF box2) {
         double fuzz_pixs_normalized = 0.1;
-        if (box1[0] >= box2[0] - fuzz_pixs_normalized && box1[0] <= box2[2] + fuzz_pixs_normalized //x1 of box1 is in x range of box2
-                &&
-                box1[1] >= box2[1] - fuzz_pixs_normalized && box1[1] <= box2[3] + fuzz_pixs_normalized &&   //  y1 of box1 is in y range of box2
+        if(box1.left >= box2.left - fuzz_pixs_normalized && box1.left <= box2.right + fuzz_pixs_normalized && // left vertical edge of box 1 is withing fuzz_pix_normalized% of box2 boundaries (or inside)
+           box1.right >= box2.left - fuzz_pixs_normalized && box1.right <= box2.right + fuzz_pixs_normalized && // right vertical edge of box 1 is in range
+           box1.top >= box2.top - fuzz_pixs_normalized && box2.top <= box2.bottom + fuzz_pixs_normalized && // top horizontal edge of box 1 in range
+           box2.bottom >= box2.top - fuzz_pixs_normalized && box2.bottom <= box2.bottom + fuzz_pixs_normalized ) {  //bottom horizontal edge of box 1 in range
+            return Boolean.TRUE;
+        }
+        else {
+            return Boolean.FALSE;
+        }
 
-                box1[2] >= box2[0] - fuzz_pixs_normalized && box1[2] <= box2[2] + fuzz_pixs_normalized &&   //x2 of box1 is in x range of box2
-
-                box1[3] >= box2[1] - fuzz_pixs_normalized && box1[3] <= box2[3] + fuzz_pixs_normalized)     //y2 of box1 is in y range of box 2
-
-            return True;
-        else
-            return False;
     }
 
-    public static boolean inBox(box[], x, y) {
-        if (x <= box[2] && x >= box[0] && y <= box[3] && y >= box[1])
-            return True;
+    /**
+     * box is RectF with bounds between 0.0 and 1.0 as it has been normalized by size of image in width/height
+     * @return true rNormalized,cNormalized if in bounds if box
+     */
+    public  Boolean inBox(RectF box, float rNormalized, float cNormalized) {
+        if (rNormalized <= box.bottom && rNormalized >= box.top && cNormalized <= box.right && cNormalized >= box.left)
+            return Boolean.TRUE;
         else
-            return False;
+            return Boolean.FALSE;
     }
 
-    public boolean inBox(box[], r, c, image_size) {
-        if (r <= box[2] * image_size && r >= box[0] * image_size && c <= box[3] * image_size && c >=
-                box[1] * image_size)
-            return True;
+    /**
+     * box is representing a bounding box in image with normalized values between 0.0 and 1.0 for width and height
+     * r,c is row,column of a pixel in original image coordinates
+     * image_size is size of image ---ASSUMES images are square
+     * So, factor is image_size when compare
+     * @return
+     */
+    public boolean inBox(RectF box, int r, int c, int image_size) {
+        if (r <= box.bottom * image_size && r >= box.top * image_size &&
+                c <= box.right * image_size && c >= box.left * image_size)
+            return Boolean.TRUE;
         else
-            return False;
+            return Boolean.FALSE;
     }
 
-    public static boolean inBoxes(boxes, x, y) {
-        boolean inBoxesFlag = False;
-        for box in boxes {
-            if (inBox(box, x, y))
-                inBoxesFlag = True;
+    /**
+     *
+     * returns True if (rNormalized,cNormalized) is inside any of the boxes in the boxes[] array
+     * Note Rect.left,right,top,bottom and rNormalized, cNormalized are normalized (0.0 to 1.0) row
+     * and column locations relative to an image normalized so width,height range from 0.0 to 1.0
+     *
+     * @return true if rNormalized,cNormalized is a pixel location insize of one of the boxes in boxes[]
+     */
+    public  boolean inBoxes(RectF[] boxes, float rNormalized, float cNormalized) {
+        boolean inBoxesFlag = Boolean.FALSE;
+
+        for(int i=0; i<= boxes.length; i++){
+            if (inBox(boxes[i], rNormalized, cNormalized))
+                inBoxesFlag = Boolean.TRUE;
             break;
         }
         return inBoxesFlag;
     }
 
-    public static boolean inBoxes(boxes, r, c, image_size){
 
-    boolean inBoxesFlag = False;
+    /**
+     * tell if
+     * returns True if (r,c) is inside any of the boxes in the boxes[] array
+     * Note Rect.left,right,top,bottom  are normalized (0.0 to 1.0) row and
+     *  and column locations relative to an image normalized so width,height range from 0.0 to 1.0
+     *
+     *  Note (r,c) is not normalized, hence need image_size the size of image where assume image is square
+     *
+     * @return true if rNormalized,cNormalized is a pixel location insize of one of the boxes in boxes[]
+     */
+    public boolean inBoxes(RectF[] boxes, int r, int c, int image_size){
 
-    for box in boxes{
-        if (inBox(box, r, c, image_size))
-            inBoxesFlag = True;
-        break;
-    }
-            return inBoxesFlag;
+         boolean inBoxesFlag = Boolean.TRUE;
+        for(int i=0; i<= boxes.length; i++){
+            if (inBox(boxes[i], r, c, image_size))
+                inBoxesFlag = Boolean.TRUE;
+            break;
+        }
+        return inBoxesFlag;
 }
+
+    /**
+     * method to generate a Bitmap representing the forced Attention Look&Learn image
+     * this is an image where certain parts (bounding boxes) representing semantic regions of body and
+     * body parts are emphasized by altering the "transparency" through darkening of the background,
+     * body and body_parts by the this.**Percent multiplication factor.  (this.bodyPercent, this.backgroundPercent, etc)
+     * @param input_frames
+     * @return
+     */
     public List<Bitmap> createAttentionImages(List<Bitmap> input_frames) {
-        int [] BODY_LABELS = new int [1,2];
-        int [] BODY_PART_LABELS =new int [3,4,5];
-  //body box for highest certainty box
-        int bodyBox[] = new int[-1,-1,-1,-1];
-          //STEP1:  find the best Body box --highest certainty
-          // sort through and find the best body detection above teh min_score_threshol
-        for (int i = 0; i < certainties.size(); i++) {
-            if (class_indices[i] == BODY_LABELS ){
-                if (certainties[i] > min_score_thresh) {
-                      bodyBox = boxes[i];
-                      break;
-                  }
-              }
-          }
-  //if there is no body above threshold then simply return the orinigal iamge
-  if(bodyBox[0] ==-1)
-      return input_frames;
 
-  int  insideBodyPartBoxes[] = new int[];
+        //NOTE--we will update the contents of input_frames with the new attention images if body is detection + parts
 
 
-  //STEP 2:  get all the bodyPart boxes that are inside our selected bodyBOx
-  //grab all of the bodyPart boxes above min_score_threshold that are inside the bodBox
-  for(int i=0; i <certainties.size(); i++) {
-      if (certainties[i] < min_score_thresh || class_indices[i] == BODY_LABELS)
-      continue;
-      if (fuzzyBoxInBox(boxes[i], bodyBox) == True)
-          insideBodyPartBoxes.append(boxes[i]);
-  }
-  //STEP 3: generate image
+        //looping variables
+        Classifier.Recognition result;
+        String title;
+        RectF box;
+
+
+        int BODY_LABELS[] = {1,2};  //ANKUSH CONFIRM
+
+        int BODY_PART_LABELS[] = {3,4,5}; //ANKUSH CONFIRM
+
+        //body box  --initialize to nonsense
+        RectF bodyBox = new RectF(-1,-1,-1,-1);
+
+        //List of body part bounding boxes that will be inside of our selected bodyBox
+        ArrayList<RectF> insideBodyPartBoxes = new ArrayList<RectF>();
+
+
+        //STEP 3: generate image
 
   //now there is a body so at least that we will be able to visualize it so lets
   //start by making copy of image.
@@ -274,15 +323,45 @@ public class LookLearnProcessor {
             //STEP3: create the forced Attension image stored in b that uses the detections
             // SEE PYTHON CODE -- ANKUSH we did not do ANY and ALL recognitions above the threshold --only one body, etc.
             //cycling through all of the recognition detections in my image I am currently processing
-            for (final Classifier.Recognition result : results) {  //loop variable is result, represents one detection
 
-                final RectF location = result.getLocation();  //getting as  a rectangle the bounding box of the result detecgiton
+            //ANKUSH --breakpoint and confirm the title versus use of id in Classifier.Recognition result
+            //STEP1:  find the best Body box --highest certainty
+            // sort through and find the best body detection above teh min_score_threshol
+            for (i = 0; i < results.size(); i++) {
+                result = results.get(i);
+                title = result.getTitle();
+                if(title.contains("bodySquat") || title.contains("bodyTall") && result.getConfidence() >= MINIMUM_CONFIDENCE_TF_OD_API)
+                 {
+                        bodyBox = result.getLocation();
+                        break;
+                 }
 
-                //IF the detection is a body and not been used
-                if (location != null && result.getConfidence() >= MINIMUM_CONFIDENCE_TF_OD_API) {
+            }
+
+            //Saftey check --if no body found then continue the loop to process the next image
+            if (bodyBox.left == -1)
+                //do nothing to this input frame....go to next for processing
+                continue;
+
+            //STEP 2: Find BodyParts that are inside the bodyBox and save in a List<Classifier.Recognition>
+            for (i = 0; i < results.size(); i++) {
+                result = results.get(i);
+                title = result.getTitle();
+                box = result.getLocation();
+                if(result.getConfidence() < MINIMUM_CONFIDENCE_TF_OD_API || title.contains("bodyTall") || title.contains("bodySquat"))
+                    continue;
+                //test if bounding box of this body part is inside of our bodyBox we selected in STEP1
+                if(fuzzyBoxInBox(box, bodyBox)){
+                    insideBodyPartBoxes.add(box);
+                }
+            }
+
+
+
+            //STEP 3:
 
                     String title = result.getTitle();
-                    if(title.contains("bodySquat") || title.contains("bodyTall")){
+
 
                         //saftey check
                         int left = (int) location.left;
@@ -309,7 +388,10 @@ public class LookLearnProcessor {
                             bottom = b.getHeight();
                         if(top > bottom)
                             top=bottom;
+
+
                         //https://developer.android.com/reference/android/graphics/RectF
+                        //ccycle through entire image
                         for (int x = left; x < right; ++x) {
                             for (int y =top; y < bottom; ++y) {
                                 // get pixel color from original image
@@ -324,13 +406,13 @@ public class LookLearnProcessor {
                             }
                         }
 
-                    }
-                    //Select best box either a body or any part
-                    //
-                    int left = (int) location.left;
-                    int right = (int) location.right;
-                    int top = (int) location.top;
-                    int bottom = (int) location.bottom;
+
+                    //NOW create the image using bodyPart and insideBodyPartBoxes
+
+                    int left = (int) location.left;   //column values
+                    int right = (int) location.right;  //column value
+                    int top = (int) location.top;    //row value
+                    int bottom = (int) location.bottom; //row value
 
                     for (int  x= left; x < right; ++x) {
 
@@ -362,14 +444,14 @@ public class LookLearnProcessor {
                             }
                         }
                     }
-                }
+
 
 
 
             //set the LookLearn image to replace the original
             input_frames.set(i, output);
 
-        }//end process this frames classification results
+
 
 
 
