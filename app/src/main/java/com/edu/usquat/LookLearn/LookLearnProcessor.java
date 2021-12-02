@@ -171,11 +171,11 @@ public class LookLearnProcessor {
      *
      * @return true if rNormalized,cNormalized is a pixel location insize of one of the boxes in boxes[]
      */
-    public  boolean inBoxes(RectF[] boxes, float rNormalized, float cNormalized) {
+    public  boolean inBoxes(ArrayList <RectF> boxes, float rNormalized, float cNormalized) {
         boolean inBoxesFlag = Boolean.FALSE;
 
-        for(int i=0; i<= boxes.length; i++){
-            if (inBox(boxes[i], rNormalized, cNormalized))
+        for(int i=0; i <= boxes.size(); i++){
+            if (inBox(boxes.get(i), rNormalized, cNormalized))
                 inBoxesFlag = Boolean.TRUE;
             break;
         }
@@ -193,11 +193,11 @@ public class LookLearnProcessor {
      *
      * @return true if rNormalized,cNormalized is a pixel location insize of one of the boxes in boxes[]
      */
-    public boolean inBoxes(RectF[] boxes, int r, int c, int image_size){
+    public boolean inBoxes(ArrayList<RectF> boxes, int r, int c, int image_size){
 
          boolean inBoxesFlag = Boolean.TRUE;
-        for(int i=0; i<= boxes.length; i++){
-            if (inBox(boxes[i], r, c, image_size))
+        for(int i=0; i<= boxes.size(); i++){
+            if (inBox(boxes.get(i), r, c, image_size))
                 inBoxesFlag = Boolean.TRUE;
             break;
         }
@@ -223,9 +223,9 @@ public class LookLearnProcessor {
         RectF box;
 
 
-        int BODY_LABELS[] = {1,2};  //ANKUSH CONFIRM
+        int BODY_LABELS[] = {1,2};
 
-        int BODY_PART_LABELS[] = {3,4,5}; //ANKUSH CONFIRM
+        int BODY_PART_LABELS[] = {3,4,5};
 
         //body box  --initialize to nonsense
         RectF bodyBox = new RectF(-1,-1,-1,-1);
@@ -233,19 +233,6 @@ public class LookLearnProcessor {
         //List of body part bounding boxes that will be inside of our selected bodyBox
         ArrayList<RectF> insideBodyPartBoxes = new ArrayList<RectF>();
 
-
-        //STEP 3: generate image
-
-  //now there is a body so at least that we will be able to visualize it so lets
-  //start by making copy of image.
-  //Copy the output Generated image to other
-
-
-  //copy in entire image, and at each pixel tell
-  // if in background wieght by
-  // if it is inside the bodyBox weight it by bodyVisualizationPercent,
-  //if it is in a body part INSIDE the bodyBox weight weight it by bodyPartVisualizationPercent
-  //#NOTE: x is equivalent to r or row  and y is equivalent to c or Column
 
 
 
@@ -324,7 +311,7 @@ public class LookLearnProcessor {
             // SEE PYTHON CODE -- ANKUSH we did not do ANY and ALL recognitions above the threshold --only one body, etc.
             //cycling through all of the recognition detections in my image I am currently processing
 
-            //ANKUSH --breakpoint and confirm the title versus use of id in Classifier.Recognition result
+
             //STEP1:  find the best Body box --highest certainty
             // sort through and find the best body detection above teh min_score_threshol
             for (i = 0; i < results.size(); i++) {
@@ -360,9 +347,9 @@ public class LookLearnProcessor {
 
             //STEP 3:
 
-                    String title = result.getTitle();
 
 
+/*
                         //saftey check
                         int left = (int) location.left;
                         int right = (int) location.right;
@@ -391,28 +378,8 @@ public class LookLearnProcessor {
 
 
                         //https://developer.android.com/reference/android/graphics/RectF
-                        //ccycle through entire image
-                        for (int x = left; x < right; ++x) {
-                            for (int y =top; y < bottom; ++y) {
-                                // get pixel color from original image
-                                pixel = b.getPixel(x, y);
-                                // apply filtering on each channel R, G, B
-                                A = Color.alpha(pixel);
-                                R = (int) (Color.red(pixel) * bodyPercent);
-                                G = (int) (Color.green(pixel) * bodyPercent);
-                                B = (int) (Color.blue(pixel) * bodyPercent);
-                                // set new color pixel to output bitmap
-                                output.setPixel(x, y, Color.argb(A, R, G, B));
-                            }
-                        }
-
-
+                    //cycle through entire image
                     //NOW create the image using bodyPart and insideBodyPartBoxes
-
-                    int left = (int) location.left;   //column values
-                    int right = (int) location.right;  //column value
-                    int top = (int) location.top;    //row value
-                    int bottom = (int) location.bottom; //row value
 
                     for (int  x= left; x < right; ++x) {
 
@@ -432,7 +399,7 @@ public class LookLearnProcessor {
                                 A = Color.alpha(pixel);
                                 R = (int) (Color.red(pixel) * bodyPercent);
                                 G = (int) (Color.green(pixel) * bodyPercent);
-                                B = (int) (Color.blue(pixel) * bodyPercent)
+                                B = (int) (Color.blue(pixel) * bodyPercent);
                             }
                             else {
                                 pixel = b.getPixel(x, y);
@@ -445,7 +412,7 @@ public class LookLearnProcessor {
                         }
                     }
 
-
+*/
 
 
             //set the LookLearn image to replace the original
