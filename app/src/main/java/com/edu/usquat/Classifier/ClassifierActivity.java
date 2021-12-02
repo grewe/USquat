@@ -123,10 +123,9 @@ public class ClassifierActivity<ProgessBar> extends AppCompatActivity {
         if (classifier != null){
             // Processing the frames
             // result will look like this - priority queue [shallow] 99.5 [bent_over] 0.1
+            results = classifier.getFramesAndProcess(frames);
 
-     results = classifier.getFramesAndProcess(frames);
-
-          Log.d(TAG,String.valueOf(results));
+            Log.d(TAG,String.valueOf(results));
             Log.d(TAG,String.valueOf(String.format("End of LSTM: %1$TH:%1$TM:%1$TS",System.currentTimeMillis())));
         }
         FLAG_PROCESSING_DONE= true;

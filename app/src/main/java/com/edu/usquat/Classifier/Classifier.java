@@ -233,10 +233,11 @@ public abstract class Classifier {
 // **********************************CREATE LSTM MODEL HERE ***************************************
 
         //Now decide on the Model to use for LSTM - orginal (kelly) or LookLEarn(ankush)
-        if(this.mUSquatModel == "Original")
+        if(this.mUSquatModel.contains("Original"))
             lstmModel = FileUtil.loadMappedFile(activity, "lstm_classifier.tflite");
         else
-            lstmModel = FileUtil.loadMappedFile(activity, "lstm_lookLearn_classifier.tflite");
+            lstmModel = FileUtil.loadMappedFile(activity, "lstm_classifier.tflite");
+     //   lstmModel = FileUtil.loadMappedFile(activity, "lstm_lookLearn_classifier.tflite");
 
 
         // Create a TFLite interpreter instance
@@ -259,7 +260,7 @@ public abstract class Classifier {
         public List<Recognition> getFramesAndProcess(final List<Bitmap> processing_frames ){
             Log.d(TAG,String.valueOf(processing_frames.size()));
 
-            if(this.mUSquatModel == "LookLearn")
+            if(this.mUSquatModel.contains("LookLearn"))
                 return recognizeLookLearnImages(processing_frames);
             else
                 return recognizeImages(processing_frames);

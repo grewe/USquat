@@ -240,7 +240,7 @@ public class LookLearnProcessor {
 
 
         //saftey check
-        if(input_frames.size() >0)
+        if(input_frames.size() <=0)
             return input_frames;
 
         //Loading the BodyPartCNN

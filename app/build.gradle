@@ -42,6 +42,7 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
 
     /* TensorFlow Lite 2.0+ */
+
     implementation('org.tensorflow:tensorflow-lite:0.0.0-nightly') {changing = true}
     implementation('org.tensorflow:tensorflow-lite-support:0.0.0-nightly') {changing = true}
     implementation('org.tensorflow:tensorflow-lite-gpu:0.0.0-nightly') {changing = true}
