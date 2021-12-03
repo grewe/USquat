@@ -88,7 +88,26 @@ public class LookLearnProcessor {
         bodyPartPercent = ResourcesCompat.getFloat(context.getResources(), R.dimen.bodyPartPercent);
 
 
-        //setup transformation to crop images for processing
+        //load up the LookLearn Forced Attention Detector
+        //Loading the BodyPartCNN
+        try {
+            detector =
+                    (TFLiteObjectDetectionEfficientDet) TFLiteObjectDetectionEfficientDet.create(
+                            context.getAssets(),
+                            TF_OD_API_MODEL_FILE,
+                            TF_OD_API_LABELS_FILE,
+                            TF_OD_API_INPUT_SIZE,
+                            TF_OD_API_IS_QUANTIZED);
+            cropSize = TF_OD_API_INPUT_SIZE;
+        } catch (final IOException e) {
+            e.printStackTrace();
+            LOGGER.e(e, "Exception initializing BodyPartCNN!");
+            Toast toast =
+                    Toast.makeText(
+                            context, "BodyPartCNN could not be initialized", Toast.LENGTH_SHORT);
+            toast.show();
+
+        }
 
     }
 
@@ -239,33 +258,11 @@ public class LookLearnProcessor {
 
 
 
-
-
-
-
         //saftey check
         if(input_frames.size() <=0)
             return input_frames;
 
-        //Loading the BodyPartCNN
-        try {
-            detector =
-                    (TFLiteObjectDetectionEfficientDet) TFLiteObjectDetectionEfficientDet.create(
-                            context.getAssets(),
-                            TF_OD_API_MODEL_FILE,
-                            TF_OD_API_LABELS_FILE,
-                            TF_OD_API_INPUT_SIZE,
-                            TF_OD_API_IS_QUANTIZED);
-            cropSize = TF_OD_API_INPUT_SIZE;
-        } catch (final IOException e) {
-            e.printStackTrace();
-            LOGGER.e(e, "Exception initializing BodyPartCNN!");
-            Toast toast =
-                    Toast.makeText(
-                            context, "BodyPartCNN could not be initialized", Toast.LENGTH_SHORT);
-            toast.show();
 
-        }
         int IMG_SIZE = TF_OD_API_INPUT_SIZE;
         //get the image size from the first image in the input_frames
         int inputWidth = input_frames.get(0).getWidth();
@@ -276,31 +273,31 @@ public class LookLearnProcessor {
         Bitmap output;
         int pixel;  //stored rgb as a combined value using Color.argb format
         int A,R,G,B;
+        int i;
 
 
         //Now need to cycle through the frames in input_frames and run through the BodyPartCNN
         //first we need to resize it and then run it through the bodypartCNN
-        for(int i=0; i<input_frames.size(); i++){
+        for(int frame_index=0; frame_index<input_frames.size(); frame_index++) {
 
-            //STEP 1: resize to run through body part CNN
-            Bitmap b = Bitmap.createScaledBitmap(input_frames.get(0),cropSize,cropSize,true);
+            //STEP 1: resize to run through body part CNN and create
+            // LookLearn output Bitmap and visualize the background in it
+            Bitmap b = Bitmap.createScaledBitmap(input_frames.get(frame_index), cropSize, cropSize, true);
             //make a copy to create our LookLearn image in
             output = b.copy(b.getConfig(), true);
             for (int x = 0; x < output.getWidth(); ++x) {
-               for (int y = 0; y < output.getHeight(); ++y) {
-                        // get pixel color
-                        pixel = output.getPixel(x, y);
-                        // apply filtering on each channel R, G, B
-                        A = Color.alpha(pixel);
-                        R = (int) (Color.red(pixel) * backgroundPercent);
-                        G = (int) (Color.green(pixel) * backgroundPercent);
-                        B = (int) (Color.blue(pixel) * backgroundPercent);
-                        // set new color pixel to output bitmap
-                        output.setPixel(x, y, Color.argb(A, R, G, B));
-                    }
+                for (int y = 0; y < output.getHeight(); ++y) {
+                    // get pixel color
+                    pixel = output.getPixel(x, y);
+                    // apply filtering on each channel R, G, B
+                    A = Color.alpha(pixel);
+                    R = (int) (Color.red(pixel) * backgroundPercent);
+                    G = (int) (Color.green(pixel) * backgroundPercent);
+                    B = (int) (Color.blue(pixel) * backgroundPercent);
+                    // set new color pixel to output bitmap
+                    output.setPixel(x, y, Color.argb(A, R, G, B));
                 }
-
-
+            }
 
 
             //STEP2: run through BodyPartCNN and get detection
@@ -310,22 +307,22 @@ public class LookLearnProcessor {
             final List<Classifier.Recognition> results = detector.recognizeImage(b);  //performing detection on croppedBitmap
             lastProcessingTimeMs = SystemClock.uptimeMillis() - startTime;
             LOGGER.i("BodyPartCNN took to process 1 image ", lastProcessingTimeMs);
+            LOGGER.i("BodyPartCNN took to process 1 image " + lastProcessingTimeMs);
 
             //STEP3: create the forced Attension image stored in b that uses the detections
             // SEE PYTHON CODE -- ANKUSH we did not do ANY and ALL recognitions above the threshold --only one body, etc.
             //cycling through all of the recognition detections in my image I am currently processing
 
 
-            //STEP1:  find the best Body box --highest certainty
+            //STEP3.1:  find the best Body box --highest certainty
             // sort through and find the best body detection above teh min_score_threshol
             for (i = 0; i < results.size(); i++) {
                 result = results.get(i);
                 title = result.getTitle();
-                if((title.contains("bodySquat") || title.contains("bodyTall") || title.contains("Person"))&& result.getConfidence() >= MINIMUM_CONFIDENCE_TF_OD_API)
-                 {
-                        bodyBox = result.getLocation();
-                        break;
-                 }
+                if ((title.contains("bodySquat") || title.contains("bodyTall") || title.contains("Person")) && result.getConfidence() >= MINIMUM_CONFIDENCE_TF_OD_API) {
+                    bodyBox = result.getLocation();
+                    break;
+                }
 
             }
 
@@ -334,22 +331,92 @@ public class LookLearnProcessor {
                 //do nothing to this input frame....go to next for processing
                 continue;
 
-            //STEP 2: Find BodyParts that are inside the bodyBox and save in a List<Classifier.Recognition>
+            //STEP 3.2: Find BodyParts that are inside the bodyBox and save in a List<Classifier.Recognition>
             for (i = 0; i < results.size(); i++) {
                 result = results.get(i);
                 title = result.getTitle();
                 box = result.getLocation();
-                if(result.getConfidence() < MINIMUM_CONFIDENCE_TF_OD_API || title.contains("bodyTall") || title.contains("bodySquat"))
+                if (result.getConfidence() < MINIMUM_CONFIDENCE_TF_OD_API || title.contains("bodyTall") || title.contains("bodySquat") || title.contains("Person"))
                     continue;
                 //test if bounding box of this body part is inside of our bodyBox we selected in STEP1
-                if(fuzzyBoxInBox(box, bodyBox)){
+                if (fuzzyBoxInBox(box, bodyBox)) {
                     insideBodyPartBoxes.add(box);
                 }
             }
 
 
+            //STEP 3.3: Create Visualization of the bodyBox and the insideBodyPartBoxes in the current ouput image
+            //step3.3.1:  first lest visualize the bodyBox
+            int row, col;  //represents row and column
+            //assumes image is square IMG_SIZExIMG_SIZE
+           // for (row = (int) (bodyBox.top * IMG_SIZE); row <= (int) (bodyBox.bottom * IMG_SIZE); row++)
+            //    for (col = (int) (bodyBox.left * IMG_SIZE); col <= (int) (bodyBox.right * IMG_SIZE); col++) {
 
-            //STEP 3:
+            //saftey check
+            if(bodyBox.top <0.0)
+                bodyBox.top=0.0f;
+            if(bodyBox.top >=IMG_SIZE)
+                bodyBox.top = IMG_SIZE -1;
+            if(bodyBox.left <0.0)
+                bodyBox.left=0.0f;
+            if(bodyBox.left >=IMG_SIZE)
+                bodyBox.left = IMG_SIZE -1;
+            if(bodyBox.right <0.0)
+                bodyBox.right=0.0f;
+            if(bodyBox.right >=IMG_SIZE)
+                bodyBox.right = IMG_SIZE -1;
+            if(bodyBox.bottom <0.0)
+                bodyBox.bottom=0.0f;
+            if(bodyBox.bottom >=IMG_SIZE)
+                bodyBox.bottom = IMG_SIZE -1;
+
+            for (row = (int) (bodyBox.top ); row <= (int) (bodyBox.bottom); row++)
+                for (col = (int) (bodyBox.left); col <= (int) (bodyBox.right); col++) {
+                    // get pixel color
+                    pixel = b.getPixel(row, col);
+                    // apply filtering on each channel R, G, B
+                    A = Color.alpha(pixel);
+                    R = (int) (Color.red(pixel) * bodyPercent);
+                    G = (int) (Color.green(pixel) * bodyPercent);
+                    B = (int) (Color.blue(pixel) * bodyPercent);
+                    // set new color pixel to output bitmap
+                    output.setPixel(row, col, Color.argb(A, R, G, B));
+                }
+
+            //step 3.3.2: lets visualize all of the insideBodyPartBoxes
+            for(int index=0; index< insideBodyPartBoxes.size(); index++){
+                //saftey check
+                if(insideBodyPartBoxes.get(index).top <0.0)
+                    insideBodyPartBoxes.get(index).top=0.0f;
+                if(insideBodyPartBoxes.get(index).top >=IMG_SIZE)
+                    insideBodyPartBoxes.get(index).top = IMG_SIZE -1;
+                if(insideBodyPartBoxes.get(index).left <0.0)
+                    insideBodyPartBoxes.get(index).left=0.0f;
+                if(insideBodyPartBoxes.get(index).left >=IMG_SIZE)
+                    insideBodyPartBoxes.get(index).left = IMG_SIZE -1;
+                if(insideBodyPartBoxes.get(index).right <0.0)
+                    insideBodyPartBoxes.get(index).right=0.0f;
+                if(insideBodyPartBoxes.get(index).right >=IMG_SIZE)
+                    insideBodyPartBoxes.get(index).right = IMG_SIZE -1;
+                if(insideBodyPartBoxes.get(index).bottom <0.0)
+                    insideBodyPartBoxes.get(index).bottom=0.0f;
+                if(insideBodyPartBoxes.get(index).bottom >=IMG_SIZE)
+                    insideBodyPartBoxes.get(index).bottom = IMG_SIZE -1;
+                for (row = (int) (insideBodyPartBoxes.get(index).top * IMG_SIZE); row <= (int) (insideBodyPartBoxes.get(index).bottom * IMG_SIZE); row++)
+                    for (col = (int) (insideBodyPartBoxes.get(index).left * IMG_SIZE); col <= (int) (insideBodyPartBoxes.get(index).right * IMG_SIZE); col++) {
+                        // get pixel color
+                        pixel = b.getPixel(row, col);
+                        // apply filtering on each channel R, G, B
+                        A = Color.alpha(pixel);
+                        R = (int) (Color.red(pixel) * bodyPartPercent);
+                        G = (int) (Color.green(pixel) * bodyPartPercent);
+                        B = (int) (Color.blue(pixel) * bodyPartPercent);
+                        // set new color pixel to output bitmap
+                        output.setPixel(row, col, Color.argb(A, R, G, B));
+                    }
+            }
+
+
 
 
 
@@ -420,7 +487,7 @@ public class LookLearnProcessor {
 
 
             //set the LookLearn image to replace the original
-            input_frames.set(i, output);
+            input_frames.set(frame_index, output);
 
 
 
