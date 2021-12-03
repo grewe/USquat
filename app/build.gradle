@@ -47,6 +47,9 @@ dependencies {
     implementation('org.tensorflow:tensorflow-lite-support:0.0.0-nightly') {changing = true}
     implementation('org.tensorflow:tensorflow-lite-gpu:0.0.0-nightly') {changing = true}
 
+    // This dependency adds the necessary TF op support.
+    implementation 'org.tensorflow:tensorflow-lite-select-tf-ops:0.0.0-nightly'
+
     compile 'com.github.wseemann:FFmpegMediaMetadataRetriever:1.0.14'
     implementation "androidx.gridlayout:gridlayout:1.0.0"
     implementation "com.android.support:support-v4:27.1.1"

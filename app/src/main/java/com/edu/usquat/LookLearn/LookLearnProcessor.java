@@ -49,9 +49,13 @@ public class LookLearnProcessor {
     private static final boolean TF_OD_API_IS_QUANTIZED = true;  //if its quantized or not. MUST be whatever the save tflite model is saved as
 
     //TFlite file for BodyPartCNN
-    private static final String TF_OD_API_MODEL_FILE = "BodyPartCNN.tflite"; //"IRdetect.tflite";   //name of input file for MODEL must be tflite format
+    //private static final String TF_OD_API_MODEL_FILE = "BodyPartCNN.tflite"; //"IRdetect.tflite";   //name of input file for MODEL must be tflite format
     //LabelMap file listed classes--same order as training
-    private static final String TF_OD_API_LABELS_FILE = "file:///android_asset/BodyPartCNNLabelMap.txt";
+   // private static final String TF_OD_API_LABELS_FILE = "file:///android_asset/BodyPartCNNLabelMap.txt";
+    private static final String TF_OD_API_MODEL_FILE = "DPDMdetector.tflite"; //"IRdetect.tflite";   //name of input file for MODEL must be tflite format
+    //LabelMap file listed classes--same order as training
+    private static final String TF_OD_API_LABELS_FILE = "file:///android_asset/DPDMlabelmap.txt";
+
 
 
     //???NEED not using Activity
@@ -317,7 +321,7 @@ public class LookLearnProcessor {
             for (i = 0; i < results.size(); i++) {
                 result = results.get(i);
                 title = result.getTitle();
-                if(title.contains("bodySquat") || title.contains("bodyTall") && result.getConfidence() >= MINIMUM_CONFIDENCE_TF_OD_API)
+                if((title.contains("bodySquat") || title.contains("bodyTall") || title.contains("Person"))&& result.getConfidence() >= MINIMUM_CONFIDENCE_TF_OD_API)
                  {
                         bodyBox = result.getLocation();
                         break;
