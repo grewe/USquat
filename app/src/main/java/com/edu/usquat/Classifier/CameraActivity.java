@@ -92,7 +92,7 @@ public class CameraActivity extends Activity implements OnDataPass {
        // int numFrames = mp.getMetrics().get(MediaPlayer.MetricsConstants.FRAMES);
 
         if(option =="GLOBAL_SAMPLE"){  //new version using instead the FFmpegMediaMetadataRetriever
-            //KELLY NEED TO FIX THIS
+            /*KELLY NEED TO FIX THIS
             //using MediaMetadataRetrivier -which works in microsecond units
             FFmpegMediaMetadataRetriever mmr = new FFmpegMediaMetadataRetriever();
             mmr.setDataSource(getBaseContext(), Uri.parse(data));
@@ -115,7 +115,7 @@ public class CameraActivity extends Activity implements OnDataPass {
             }
 
         }
-        else if(option =="GLOBAL_SAMPLE ORIGINAL"){
+        else if(option =="GLOBAL_SAMPLE ORIGINAL"){*/
             //KELLY NEED TO FIX THIS
             //using MediaMetadataRetrivier -which works in microsecond units
             long step = Math.round(1000*1000/frameRate);  //--this is #microseconds to capture 1 frame --mkae steps in microsecond (#microseconds per frame)
