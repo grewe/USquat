@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.Matrix;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraDevice;
 import android.media.MediaMetadataRetriever;
@@ -26,6 +27,7 @@ import android.widget.Toast;
 import com.edu.usquat.R;
 
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
@@ -72,6 +74,7 @@ public class CameraActivity extends Activity implements OnDataPass {
      *     // option 1
      * @param data
      */
+    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public void onDataPass(String data, String option) {
         Log.d(TAG,data);
@@ -80,15 +83,43 @@ public class CameraActivity extends Activity implements OnDataPass {
         fmpeg.setDataSource(data);
         ArrayList<Bitmap> frames = new ArrayList<Bitmap>();
         MediaPlayer mp = MediaPlayer.create(getBaseContext(), Uri.parse(data));
-        int seconds = mp.getDuration() * 1000;  //milliseconds time of video
+        int microseconds = mp.getDuration() * 1000;  //milliseconds time of video
         //assume average framerate of 30 -- future work to query device,but, changes constantly
         int frameRate = 30;
 
-        if(option =="GLOBAL_SAMPLE"){
+        //get number of frames
+       // mp.getMetrics().get(MediaPlayer.MetricsConstants.FRAMES);
+       // int numFrames = mp.getMetrics().get(MediaPlayer.MetricsConstants.FRAMES);
+
+        if(option =="GLOBAL_SAMPLE"){  //new version using instead the FFmpegMediaMetadataRetriever
             //KELLY NEED TO FIX THIS
             //using MediaMetadataRetrivier -which works in microsecond units
-            long step = Math.round(1000*1000/frameRate);  //mkae steps in microsecond (#microseconds per frame)
-            for(int i = 1000000;i<seconds;i+= step){   // ignoring the first second, grabbing every frame
+            FFmpegMediaMetadataRetriever mmr = new FFmpegMediaMetadataRetriever();
+            mmr.setDataSource(getBaseContext(), Uri.parse(data));
+            //will need to rotate captured frame
+            Matrix matrix = new Matrix();
+            matrix.preRotate(-90.0f);
+            Bitmap bitmap, resizedBitmap;
+
+            long step = Math.round(1000*1000/frameRate);  //--this is #microseconds to capture 1 frame --mkae steps in microsecond (#microseconds per frame)
+            for(long i = 1000000;i<microseconds;i+= step){   // ignoring the first second, grabbing every frame
+                // the MediaMetadataRetriever.getFrameAtTime() takes in microseconds 10^-6
+                bitmap = mmr.getFrameAtTime(i, FFmpegMediaMetadataRetriever.OPTION_CLOSEST);
+             //   Bitmap bitmap = fmpeg.getFrameAtTime(i, MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
+                resizedBitmap = getResizeBitmap(bitmap,imgSize);
+                resizedBitmap = resizedBitmap.copy(Bitmap.Config.ARGB_8888,true);
+                //this FrameGrabber FFmpegMediaMetadataRetriever seems to open the video in rotated mode so rotate -90 degrees
+
+                resizedBitmap = Bitmap.createBitmap(resizedBitmap, 0, 0, resizedBitmap.getWidth(), resizedBitmap.getHeight(), matrix, true);
+                frames.add(resizedBitmap);
+            }
+
+        }
+        else if(option =="GLOBAL_SAMPLE ORIGINAL"){
+            //KELLY NEED TO FIX THIS
+            //using MediaMetadataRetrivier -which works in microsecond units
+            long step = Math.round(1000*1000/frameRate);  //--this is #microseconds to capture 1 frame --mkae steps in microsecond (#microseconds per frame)
+            for(long i = 1000000;i<microseconds;i+= step){   // ignoring the first second, grabbing every frame
                 // the MediaMetadataRetriever.getFrameAtTime() takes in microseconds 10^-6
                 Bitmap bitmap = fmpeg.getFrameAtTime(i, MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
                 Bitmap resizedBitmap = getResizeBitmap(bitmap,imgSize);
@@ -99,8 +130,8 @@ public class CameraActivity extends Activity implements OnDataPass {
         }
         else {  //SLIDING_WINDOW  -- KELLY FIX or for now just leaving it alone
             //using MediaMetadataRetrivier -which works in microsecond units
-            long step = Math.round(1000*1000/frameRate);  //mkae steps in microsecond (#microseconds per frame)
-            for(int i = 1000000;i<seconds;i+= step){   // ignoring the first second, grabbing every frame
+            long step = Math.round(1000*1000/frameRate);  //#microseconds to take 1 frame, mkae steps in microsecond (#microseconds per frame)
+            for(int i = 1000000;i<microseconds;i+= step){   // ignoring the first second, grabbing every frame
                 // the MediaMetadataRetriever.getFrameAtTime() takes in microseconds 10^-6
                 Bitmap bitmap = fmpeg.getFrameAtTime(i, MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
                 Bitmap resizedBitmap = getResizeBitmap(bitmap,imgSize);

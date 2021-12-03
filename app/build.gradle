@@ -50,10 +50,15 @@ dependencies {
     // This dependency adds the necessary TF op support.
     implementation 'org.tensorflow:tensorflow-lite-select-tf-ops:0.0.0-nightly'
 
-    compile 'com.github.wseemann:FFmpegMediaMetadataRetriever:1.0.14'
+
     implementation "androidx.gridlayout:gridlayout:1.0.0"
     implementation "com.android.support:support-v4:27.1.1"
     implementation "com.android.support:support-v13:27.1.1"
     implementation "com.android.support:cardview-v7:27.1.1"
     implementation "com.android.support:appcompat-v7:27.1.1"
+
+    //for ffmegmedia  see https://github.com/wseemann/FFmpegMediaMetadataRetriever
+    //compile 'com.github.wseemann:FFmpegMediaMetadataRetriever:1.0.14'
+    implementation 'com.github.wseemann:FFmpegMediaMetadataRetriever-core:1.0.16'
+    implementation 'com.github.wseemann:FFmpegMediaMetadataRetriever-native:1.0.16'
 }
