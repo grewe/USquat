@@ -236,8 +236,9 @@ public abstract class Classifier {
         if(this.mUSquatModel.contains("Original"))
             lstmModel = FileUtil.loadMappedFile(activity, "lstm_classifier.tflite");
         else
-            lstmModel = FileUtil.loadMappedFile(activity, "lstm_lookLearn_low.tflite");
-     //   lstmModel = FileUtil.loadMappedFile(activity, "lstm_lookLearn_classifier.tflite");
+            lstmModel = FileUtil.loadMappedFile(activity, "lstm_classifier.tflite");
+           // lstmModel = FileUtil.loadMappedFile(activity, "lstm_lookLearn_low.tflite");
+            //lstmModel = FileUtil.loadMappedFile(activity, "lstm_lookLearn_classifier.tflite");
 
 
         // Create a TFLite interpreter instance

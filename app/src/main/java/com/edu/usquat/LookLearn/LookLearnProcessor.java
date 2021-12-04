@@ -45,7 +45,7 @@ public class LookLearnProcessor {
 
 
     // Configuration values for the BodyPartCNN TFlite model
-    private static final int TF_OD_API_INPUT_SIZE = 380;    //this is the wxh of square input size to MODEL
+    private static final int TF_OD_API_INPUT_SIZE = 512;    //this is the wxh of square input size to MODEL
     private static final boolean TF_OD_API_IS_QUANTIZED = true;  //if its quantized or not. MUST be whatever the save tflite model is saved as
 
     //TFlite file for BodyPartCNN
@@ -54,7 +54,7 @@ public class LookLearnProcessor {
     private static final String TF_OD_API_LABELS_FILE = "file:///android_asset/BodyPartCNNLabelMap.txt";
     //private static final String TF_OD_API_MODEL_FILE = "DPDMdetector.tflite"; //"IRdetect.tflite";   //name of input file for MODEL must be tflite format
     //LabelMap file listed classes--same order as training
-    //private static final String TF_OD_API_LABELS_FILE = "file:///android_asset/DPDMlabelmap.txt";
+   // private static final String TF_OD_API_LABELS_FILE = "file:///android_asset/DPDMlabelmap.txt";
 
 
 

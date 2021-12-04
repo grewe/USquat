@@ -92,7 +92,7 @@ public class CameraActivity extends Activity implements OnDataPass {
        // int numFrames = mp.getMetrics().get(MediaPlayer.MetricsConstants.FRAMES);
 
         if(option =="GLOBAL_SAMPLE"){  //new version using instead the FFmpegMediaMetadataRetriever
-            /*KELLY NEED TO FIX THIS
+
             //using MediaMetadataRetrivier -which works in microsecond units
             FFmpegMediaMetadataRetriever mmr = new FFmpegMediaMetadataRetriever();
             mmr.setDataSource(getBaseContext(), Uri.parse(data));
@@ -105,7 +105,11 @@ public class CameraActivity extends Activity implements OnDataPass {
             for(long i = 1000000;i<microseconds;i+= step){   // ignoring the first second, grabbing every frame
                 // the MediaMetadataRetriever.getFrameAtTime() takes in microseconds 10^-6
                 bitmap = mmr.getFrameAtTime(i, FFmpegMediaMetadataRetriever.OPTION_CLOSEST);
-             //   Bitmap bitmap = fmpeg.getFrameAtTime(i, MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
+                //Bitmap bitmap = fmpeg.getFrameAtTime(i, MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
+                if(bitmap == null) { //saftey --if FFmpegMediaMetadataRetrieve fails to get frame
+                    Log.e("CameraActivity:onData:", "FFmpegMediaMetadataRetriever fails to get frame");
+                    continue;
+                }
                 resizedBitmap = getResizeBitmap(bitmap,imgSize);
                 resizedBitmap = resizedBitmap.copy(Bitmap.Config.ARGB_8888,true);
                 //this FrameGrabber FFmpegMediaMetadataRetriever seems to open the video in rotated mode so rotate -90 degrees
@@ -115,7 +119,7 @@ public class CameraActivity extends Activity implements OnDataPass {
             }
 
         }
-        else if(option =="GLOBAL_SAMPLE ORIGINAL"){*/
+        else if(option =="GLOBAL_SAMPLE ORIGINAL"){
             //KELLY NEED TO FIX THIS
             //using MediaMetadataRetrivier -which works in microsecond units
             long step = Math.round(1000*1000/frameRate);  //--this is #microseconds to capture 1 frame --mkae steps in microsecond (#microseconds per frame)
