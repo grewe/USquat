@@ -461,7 +461,13 @@ public abstract class Classifier {
 
         //First create the series of Forced Attention LookLearn images from the set stored in processing_frames
         //overwrite the images into processing_frames
+        Log.d("Classifier: BeforeLookLearnProcessor_Call",String.valueOf(String.format("%1$TH:%1$TM:%1$TS",System.currentTimeMillis())));
+        Long startMS = System.currentTimeMillis();
         List<Bitmap> lookLearn_processing_frames = this.lookLearnProcessor.createAttentionImages(processing_frames);
+        Log.d("Classifier: AfterLookLearnProcessor_Call",String.valueOf(String.format("%1$TH:%1$TM:%1$TS",System.currentTimeMillis())));
+        Long endMS = System.currentTimeMillis();
+        Log.d("Classifier: TIMETOOKLookLearnProcessor_Call",String.valueOf(1000*(endMS-startMS)));
+
 
         // Only get the first 40 frames.
         Log.d(TAG,String.valueOf(String.format("%1$TH:%1$TM:%1$TS",System.currentTimeMillis())));
